@@ -1,0 +1,207 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProfileWidget from '../components/ProfileWidget.astro';
+import RecentPosts from '../components/RecentPosts.astro';
+import Categories from '../components/Categories.astro';
+import Tags from '../components/Tags.astro';
+import Comments from '../components/Comments.astro';
+import { getAllPosts, formatDate } from '../utils/helpers';
+
+const posts = await getAllPosts();
+
+const groupedPosts = posts.reduce((acc, post) => {
+  const year = new Date(post.data.pubDatetime).getFullYear();
+  if (!acc[year]) acc[year] = [];
+  acc[year].push(post);
+  return acc;
+}, {} as Record<number, typeof posts>);
+
+const years = Object.keys(groupedPosts).sort((a, b) => Number(b) - Number(a));
+---
+
+<BaseLayout title="归档">
+  <div class="container">
+    <div class="columns is-variable is-5">
+      {/* 左侧边栏 */}
+      <div class="column is-3 sidebar-left">
+        <div class="sidebar-content">
+          <ProfileWidget />
+        </div>
+      </div>
+      
+      {/* 主内容区 */}
+      <div class="column is-6 main-content">
+        <div class="card archives-page">
+          <div class="card-header">
+            <p class="card-header-title">
+              <i class="fas fa-archive mr-2"></i>
+              文章归档
+            </p>
+          </div>
+          <div class="card-content">
+            <div class="archives-stats">
+              共有 <strong>{posts.length}</strong> 篇文章
+            </div>
+            
+            {years.map(year => (
+              <div class="archive-year-section" id={`year-${year}`}>
+                <h3 class="archive-year-title">
+                  <span class="year-badge">{year}</span>
+                  <span class="year-count">{groupedPosts[year].length} 篇</span>
+                </h3>
+                <ul class="archive-list">
+                  {groupedPosts[year].map(post => (
+                    <li class="archive-item">
+                      <span class="archive-date">{formatDate(post.data.pubDatetime, 'MM-DD')}</span>
+                      <a href={`/blog/${post.slug}/`} class="archive-title">{post.data.title}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* 评论区 */}
+        <Comments />
+      </div>
+      
+      {/* 右侧边栏 */}
+      <div class="column is-3 sidebar-right">
+        <div class="sidebar-content">
+          <RecentPosts />
+          <Categories />
+          <Tags />
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .sidebar-content > * {
+    margin-bottom: 2rem;
+  }
+  
+  .archives-page {
+    margin-bottom: 3rem;
+  }
+  
+  .archives-stats {
+    text-align: center;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius);
+    font-size: 1.1rem;
+    color: var(--text-light);
+  }
+  
+  .archives-stats strong {
+    color: var(--primary);
+    font-size: 1.5rem;
+  }
+  
+  .archive-year-section {
+    margin-bottom: 2.5rem;
+  }
+  
+  .archive-year-section:last-child {
+    margin-bottom: 0;
+  }
+  
+  .archive-year-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--primary);
+  }
+  
+  .year-badge {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  
+  .year-count {
+    font-size: 1rem;
+    color: var(--text-light);
+  }
+  
+  .archive-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .archive-item {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+    padding: 0.875rem 0;
+    border-bottom: 1px dashed var(--border-light);
+  }
+  
+  .archive-item:last-child {
+    border-bottom: none;
+  }
+  
+  .archive-date {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    min-width: 3.5rem;
+    font-family: monospace;
+  }
+  
+  .archive-title {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 1.05rem;
+    transition: color 0.2s ease;
+  }
+  
+  .archive-title:hover {
+    color: var(--primary);
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-left {
+      display: none;
+    }
+    
+    .main-content {
+      width: 70%;
+    }
+    
+    .sidebar-right {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+    
+    .main-content,
+    .sidebar-right {
+      width: 100%;
+    }
+    
+    .sidebar-right {
+      display: none;
+    }
+    
+    .archive-item {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+  }
+</style>

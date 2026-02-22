@@ -1,0 +1,279 @@
+---
+import { SHARE_CONFIG } from '../config';
+
+interface Props {
+  title?: string;
+  url?: string;
+  description?: string;
+}
+
+const { 
+  title = '', 
+  url = Astro.url.href,
+  description = ''
+} = Astro.props;
+
+const shareUrl = encodeURIComponent(url);
+const shareTitle = encodeURIComponent(title);
+const shareDesc = encodeURIComponent(description);
+
+const shareLinks = {
+  twitter: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareTitle}`,
+  facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+  linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`,
+  weibo: `https://service.weibo.com/share/share.php?url=${shareUrl}&title=${shareTitle}`,
+  telegram: `https://t.me/share/url?url=${shareUrl}&text=${shareTitle}`,
+};
+---
+
+{SHARE_CONFIG.enabled && (
+  <div class="share-widget">
+    <span class="share-label">
+      <i class="fas fa-share-alt"></i>
+      分享到
+    </span>
+    <div class="share-buttons">
+      {SHARE_CONFIG.platforms.includes('twitter') && (
+        <a href={shareLinks.twitter} target="_blank" rel="noopener" class="share-btn twitter" title="Twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      )}
+      {SHARE_CONFIG.platforms.includes('facebook') && (
+        <a href={shareLinks.facebook} target="_blank" rel="noopener" class="share-btn facebook" title="Facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+      )}
+      {SHARE_CONFIG.platforms.includes('linkedin') && (
+        <a href={shareLinks.linkedin} target="_blank" rel="noopener" class="share-btn linkedin" title="LinkedIn">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      )}
+      {SHARE_CONFIG.platforms.includes('weibo') && (
+        <a href={shareLinks.weibo} target="_blank" rel="noopener" class="share-btn weibo" title="微博">
+          <i class="fab fa-weibo"></i>
+        </a>
+      )}
+      {SHARE_CONFIG.platforms.includes('telegram') && (
+        <a href={shareLinks.telegram} target="_blank" rel="noopener" class="share-btn telegram" title="Telegram">
+          <i class="fab fa-telegram-plane"></i>
+        </a>
+      )}
+      {SHARE_CONFIG.platforms.includes('wechat') && (
+        <button class="share-btn wechat" title="微信" id="wechatShare">
+          <i class="fab fa-weixin"></i>
+        </button>
+      )}
+      {SHARE_CONFIG.platforms.includes('copy') && (
+        <button class="share-btn copy" title="复制链接" id="copyLink">
+          <i class="fas fa-link"></i>
+        </button>
+      )}
+    </div>
+    
+    {/* 微信分享弹窗 */}
+    <div class="wechat-modal" id="wechatModal">
+      <div class="wechat-modal-content">
+        <button class="wechat-close" id="wechatClose">
+          <i class="fas fa-times"></i>
+        </button>
+        <p class="wechat-title">微信扫一扫分享</p>
+        <div class="wechat-qrcode" id="wechatQrcode"></div>
+        <p class="wechat-tip">打开微信扫一扫，即可分享</p>
+      </div>
+    </div>
+  </div>
+)}
+
+<script is:inline define:vars={{ url, title }}>
+  (function() {
+    // 复制链接
+    const copyBtn = document.getElementById('copyLink');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(url);
+          
+          // 显示提示
+          const originalIcon = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+          copyBtn.classList.add('is-success');
+          
+          setTimeout(() => {
+            copyBtn.innerHTML = originalIcon;
+            copyBtn.classList.remove('is-success');
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+      });
+    }
+    
+    // 微信分享
+    const wechatBtn = document.getElementById('wechatShare');
+    const wechatModal = document.getElementById('wechatModal');
+    const wechatClose = document.getElementById('wechatClose');
+    const wechatQrcode = document.getElementById('wechatQrcode');
+    
+    if (wechatBtn && wechatModal && wechatQrcode) {
+      wechatBtn.addEventListener('click', () => {
+        // 生成二维码
+        const qrcodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+        wechatQrcode.innerHTML = `<img src="${qrcodeUrl}" alt="微信分享二维码" width="200" height="200" />`;
+        wechatModal.classList.add('is-active');
+      });
+      
+      wechatClose?.addEventListener('click', () => {
+        wechatModal.classList.remove('is-active');
+      });
+      
+      wechatModal.addEventListener('click', (e) => {
+        if (e.target === wechatModal) {
+          wechatModal.classList.remove('is-active');
+        }
+      });
+    }
+  })();
+</script>
+
+<style>
+  .share-widget {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .share-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .share-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  
+  .share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  
+  .share-btn.twitter {
+    background: #1da1f2;
+  }
+  
+  .share-btn.facebook {
+    background: #4267b2;
+  }
+  
+  .share-btn.linkedin {
+    background: #0077b5;
+  }
+  
+  .share-btn.weibo {
+    background: #e6162d;
+  }
+  
+  .share-btn.telegram {
+    background: #0088cc;
+  }
+  
+  .share-btn.wechat {
+    background: #07c160;
+  }
+  
+  .share-btn.copy {
+    background: var(--text-light);
+  }
+  
+  .share-btn.copy.is-success {
+    background: #48c774;
+  }
+  
+  /* 微信弹窗 */
+  .wechat-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .wechat-modal.is-active {
+    display: flex;
+  }
+  
+  .wechat-modal-content {
+    position: relative;
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    max-width: 300px;
+  }
+  
+  .wechat-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: 0.25rem;
+  }
+  
+  .wechat-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-strong);
+  }
+  
+  .wechat-qrcode {
+    margin-bottom: 1rem;
+  }
+  
+  .wechat-qrcode img {
+    border-radius: var(--radius);
+  }
+  
+  .wechat-tip {
+    font-size: 0.85rem;
+    color: var(--text-light);
+  }
+  
+  @media (max-width: 768px) {
+    .share-widget {
+      justify-content: center;
+    }
+    
+    .share-label {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import ProfileWidget from '../components/ProfileWidget.astro';
+import Hitokoto from '../components/Hitokoto.astro';
+import RecentPosts from '../components/RecentPosts.astro';
+import Categories from '../components/Categories.astro';
+import Archives from '../components/Archives.astro';
+import Tags from '../components/Tags.astro';
+import FriendLinks from '../components/FriendLinks.astro';
+import { getAllPosts } from '../utils/helpers';
+
+const posts = await getAllPosts();
+const recentPosts = posts.slice(0, 10);
+---
+
+<BaseLayout title="首页">
+  <div class="container">
+    <div class="columns is-variable is-5">
+      {/* 左侧边栏 */}
+      <div class="column is-3 sidebar-left">
+        <div class="sidebar-content">
+          <ProfileWidget />
+          <Hitokoto />
+        </div>
+      </div>
+      
+      {/* 主内容区 */}
+      <div class="column is-6 main-content">
+        <div class="posts-container">
+          {recentPosts.map(post => (
+            <ArticleCard post={post} />
+          ))}
+        </div>
+        
+        {posts.length > 10 && (
+          <div class="load-more has-text-centered">
+            <a href="/archives/" class="button is-primary is-medium">
+              <span>查看更多文章</span>
+              <span class="icon">
+                <i class="fas fa-arrow-right"></i>
+              </span>
+            </a>
+          </div>
+        )}
+      </div>
+      
+      {/* 右侧边栏 */}
+      <div class="column is-3 sidebar-right">
+        <div class="sidebar-content">
+          <RecentPosts />
+          <Categories />
+          <Archives />
+          <Tags />
+          <FriendLinks />
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .sidebar-content > * {
+    margin-bottom: 2rem;
+  }
+  
+  .sidebar-content > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  .posts-container {
+    margin-bottom: 3rem;
+  }
+  
+  .load-more {
+    padding: 2rem 0;
+  }
+  
+  .load-more .button {
+    padding: 0.75rem 2rem;
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-left {
+      display: none;
+    }
+    
+    .main-content {
+      width: 70%;
+    }
+    
+    .sidebar-right {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+    
+    .main-content,
+    .sidebar-right {
+      width: 100%;
+    }
+    
+    .sidebar-right {
+      display: none;
+    }
+  }
+</style>

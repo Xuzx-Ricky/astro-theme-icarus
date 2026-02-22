@@ -1,0 +1,145 @@
+---
+import { getAllPosts, formatDate, getWordCount } from '../utils/helpers';
+
+const posts = await getAllPosts();
+const recentPosts = posts.slice(0, 5);
+---
+
+<div class="card recent-posts">
+  <div class="card-header">
+    <p class="card-header-title">
+      <i class="fas fa-clock mr-2"></i>
+      最新文章
+    </p>
+  </div>
+  <div class="card-content">
+    <ul class="post-list">
+      {recentPosts.map(post => {
+        const wordCount = getWordCount(post.body);
+        return (
+          <li class="post-item">
+            <a href={`/blog/${post.slug}/`} class="post-link">
+              {post.data.thumbnail && (
+                <div class="post-thumbnail">
+                  <img src={post.data.thumbnail} alt="" loading="lazy" />
+                </div>
+              )}
+              <div class="post-info">
+                <span class="post-title">{post.data.title}</span>
+                <div class="post-meta">
+                  <span class="post-date">
+                    <i class="far fa-calendar"></i>
+                    {formatDate(post.data.pubDatetime)}
+                  </span>
+                  <span class="post-words">
+                    <i class="far fa-file-word"></i>
+                    {wordCount} 字
+                  </span>
+                </div>
+              </div>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+</div>
+
+<style>
+  .recent-posts {
+    margin-bottom: 2rem;
+  }
+  
+  .post-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .post-item {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-light);
+  }
+  
+  .post-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  
+  .post-link {
+    display: flex;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+  }
+  
+  .post-link:hover .post-title {
+    color: var(--primary);
+  }
+  
+  .post-thumbnail {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--tag-bg);
+  }
+  
+  .post-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .post-link:hover .post-thumbnail img {
+    transform: scale(1.1);
+  }
+  
+  .post-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .post-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-strong);
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color 0.2s ease;
+  }
+  
+  .post-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+  }
+  
+  .post-meta i {
+    margin-right: 0.25rem;
+  }
+  
+  @media (max-width: 768px) {
+    .post-thumbnail {
+      width: 56px;
+      height: 56px;
+    }
+    
+    .post-title {
+      font-size: 0.95rem;
+    }
+  }
+</style>

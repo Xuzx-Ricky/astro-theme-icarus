@@ -1,0 +1,94 @@
+---
+import { getAllPosts } from '../utils/helpers';
+
+const posts = await getAllPosts();
+
+const tagCounts = posts.reduce((acc, post) => {
+  post.data.tags.forEach(tag => {
+    acc[tag] = (acc[tag] || 0) + 1;
+  });
+  return acc;
+}, {} as Record<string, number>);
+
+const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 25);
+
+const maxCount = Math.max(...tags.map(t => t[1]));
+const minCount = Math.min(...tags.map(t => t[1]));
+---
+
+<div class="card tags-widget">
+  <div class="card-header">
+    <p class="card-header-title">
+      <i class="fas fa-tags mr-2"></i>
+      标签
+    </p>
+  </div>
+  <div class="card-content">
+    <div class="tag-cloud">
+      {tags.map(([tag, count]) => {
+        const size = minCount === maxCount 
+          ? 1 
+          : 0.85 + (count - minCount) / (maxCount - minCount) * 0.4;
+        return (
+          <a 
+            href={`/tags/${tag}/`} 
+            class="tag-item"
+            style={`font-size: ${size}rem;`}
+          >
+            {tag}
+            <span class="tag-count">{count}</span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</div>
+
+<style>
+  .tags-widget {
+    margin-bottom: 2rem;
+  }
+  
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .tag-item:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+  
+  .tag-count {
+    font-size: 0.75em;
+    padding: 0.125rem 0.5rem;
+    background: var(--card-bg);
+    border-radius: 999px;
+    color: var(--text-light);
+    transition: all 0.2s ease;
+  }
+  
+  .tag-item:hover .tag-count {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+  
+  [data-theme="dark"] .tag-item:hover {
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+  }
+</style>

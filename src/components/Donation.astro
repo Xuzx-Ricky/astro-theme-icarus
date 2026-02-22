@@ -1,0 +1,281 @@
+---
+import { DONATION_CONFIG } from '../config';
+---
+
+{DONATION_CONFIG.enabled && (
+  <div class="donation-widget">
+    <p class="donation-text">
+      <i class="fas fa-heart"></i>
+      如果这篇文章对你有帮助，欢迎打赏支持
+    </p>
+    <button class="donation-btn" id="donationBtn">
+      <i class="fas fa-coffee"></i>
+      打赏
+    </button>
+    
+    {/* 打赏弹窗 */}
+    <div class="donation-modal" id="donationModal">
+      <div class="donation-modal-content">
+        <button class="donation-close" id="donationClose">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <h3 class="donation-title">感谢你的支持</h3>
+        <p class="donation-desc">你的支持是我继续创作的动力</p>
+        
+        <div class="donation-methods">
+          {DONATION_CONFIG.alipay && (
+            <div class="donation-method">
+              <p class="method-name">
+                <i class="fab fa-alipay"></i>
+                支付宝
+              </p>
+              <img src={DONATION_CONFIG.alipay} alt="支付宝收款码" class="donation-qr" />
+            </div>
+          )}
+          
+          {DONATION_CONFIG.wechat && (
+            <div class="donation-method">
+              <p class="method-name">
+                <i class="fab fa-weixin"></i>
+                微信支付
+              </p>
+              <img src={DONATION_CONFIG.wechat} alt="微信收款码" class="donation-qr" />
+            </div>
+          )}
+          
+          {DONATION_CONFIG.paypal && (
+            <div class="donation-method paypal-method">
+              <p class="method-name">
+                <i class="fab fa-paypal"></i>
+                PayPal
+              </p>
+              <a 
+                href={DONATION_CONFIG.paypal} 
+                target="_blank" 
+                rel="noopener"
+                class="paypal-btn"
+              >
+                <i class="fab fa-paypal"></i>
+                通过 PayPal 打赏
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+<script>
+  (function() {
+    const donationBtn = document.getElementById('donationBtn');
+    const donationModal = document.getElementById('donationModal');
+    const donationClose = document.getElementById('donationClose');
+    
+    donationBtn?.addEventListener('click', () => {
+      donationModal?.classList.add('is-active');
+    });
+    
+    donationClose?.addEventListener('click', () => {
+      donationModal?.classList.remove('is-active');
+    });
+    
+    donationModal?.addEventListener('click', (e) => {
+      if (e.target === donationModal) {
+        donationModal.classList.remove('is-active');
+      }
+    });
+  })();
+</script>
+
+<style>
+  .donation-widget {
+    text-align: center;
+    padding: 2rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius-lg);
+    margin-top: 2rem;
+  }
+  
+  .donation-text {
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .donation-text i {
+    color: #ff6b6b;
+  }
+  
+  .donation-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .donation-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+  }
+  
+  /* 打赏弹窗 */
+  .donation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  
+  .donation-modal.is-active {
+    display: flex;
+  }
+  
+  .donation-modal-content {
+    position: relative;
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .donation-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: 0.25rem;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  
+  .donation-close:hover {
+    background: var(--hover-bg);
+    color: var(--text-strong);
+  }
+  
+  .donation-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    color: var(--text-strong);
+  }
+  
+  .donation-desc {
+    text-align: center;
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+  }
+  
+  .donation-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .donation-method {
+    text-align: center;
+  }
+  
+  .method-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .method-name .fa-alipay {
+    color: #1677ff;
+  }
+  
+  .method-name .fa-weixin {
+    color: #07c160;
+  }
+  
+  .method-name .fa-paypal {
+    color: #003087;
+  }
+  
+  .donation-qr {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  
+  .paypal-method {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .paypal-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #003087;
+    color: #fff;
+    text-decoration: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  
+  .paypal-btn:hover {
+    background: #0048b3;
+    transform: translateY(-2px);
+  }
+  
+  @media (max-width: 768px) {
+    .donation-widget {
+      padding: 1.5rem;
+    }
+    
+    .donation-modal-content {
+      padding: 1.5rem;
+    }
+    
+    .donation-methods {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

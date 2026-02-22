@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="404 - 页面未找到">
+  <div class="error-page">
+    <div class="error-content">
+      <h1 class="error-code">404</h1>
+      <h2 class="error-title">页面未找到</h2>
+      <p class="error-message">
+        抱歉，您访问的页面不存在或已被移除。
+      </p>
+      <div class="error-actions">
+        <a href="/" class="button is-primary is-medium">
+          <span class="icon">
+            <i class="fas fa-home"></i>
+          </span>
+          <span>返回首页</span>
+        </a>
+        <a href="/archives/" class="button is-outlined is-medium">
+          <span class="icon">
+            <i class="fas fa-archive"></i>
+          </span>
+          <span>浏览归档</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .error-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 300px);
+    padding: 2rem;
+  }
+  
+  .error-content {
+    text-align: center;
+    max-width: 500px;
+  }
+  
+  .error-code {
+    font-size: 10rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 40px var(--primary-light);
+  }
+  
+  [data-theme="dark"] .error-code {
+    text-shadow: 0 0 40px rgba(0, 240, 255, 0.5);
+  }
+  
+  .error-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-strong);
+  }
+  
+  .error-message {
+    font-size: 1.25rem;
+    color: var(--text-light);
+    margin-bottom: 2rem;
+  }
+  
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 768px) {
+    .error-code {
+      font-size: 6rem;
+    }
+    
+    .error-title {
+      font-size: 1.75rem;
+    }
+    
+    .error-message {
+      font-size: 1rem;
+    }
+  }
+</style>

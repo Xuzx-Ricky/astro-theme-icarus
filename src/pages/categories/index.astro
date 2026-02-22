@@ -1,0 +1,176 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProfileWidget from '../../components/ProfileWidget.astro';
+import RecentPosts from '../../components/RecentPosts.astro';
+import Tags from '../../components/Tags.astro';
+import Comments from '../../components/Comments.astro';
+import { getAllPosts } from '../../utils/helpers';
+
+const posts = await getAllPosts();
+
+const categoryCounts = posts.reduce((acc, post) => {
+  const cat = post.data.category;
+  acc[cat] = (acc[cat] || 0) + 1;
+  return acc;
+}, {} as Record<string, number>);
+
+const categories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="分类">
+  <div class="container">
+    <div class="columns is-variable is-5">
+      {/* 左侧边栏 */}
+      <div class="column is-3 sidebar-left">
+        <div class="sidebar-content">
+          <ProfileWidget />
+        </div>
+      </div>
+      
+      {/* 主内容区 */}
+      <div class="column is-6 main-content">
+        <div class="card categories-page">
+          <div class="card-header">
+            <p class="card-header-title">
+              <i class="fas fa-folder mr-2"></i>
+              文章分类
+            </p>
+          </div>
+          <div class="card-content">
+            <div class="categories-grid">
+              {categories.map(([category, count]) => (
+                <a href={`/categories/${category}/`} class="category-card">
+                  <span class="category-icon">
+                    <i class="fas fa-folder-open"></i>
+                  </span>
+                  <span class="category-name">{category}</span>
+                  <span class="category-count">{count} 篇</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* 评论区 */}
+        <Comments />
+      </div>
+      
+      {/* 右侧边栏 */}
+      <div class="column is-3 sidebar-right">
+        <div class="sidebar-content">
+          <RecentPosts />
+          <Tags />
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .sidebar-content > * {
+    margin-bottom: 2rem;
+  }
+  
+  .categories-page {
+    margin-bottom: 3rem;
+  }
+  
+  .categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+  }
+  
+  .category-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius-lg);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  
+  .category-card:hover {
+    background: var(--card-bg);
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  [data-theme="dark"] .category-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 240, 255, 0.2);
+  }
+  
+  .category-icon {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+  }
+  
+  .category-card:hover .category-icon {
+    transform: scale(1.1);
+  }
+  
+  .category-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-strong);
+  }
+  
+  .category-count {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    padding: 0.25rem 1rem;
+    background: var(--card-bg);
+    border-radius: 999px;
+  }
+  
+  .category-card:hover .category-count {
+    background: var(--primary);
+    color: #fff;
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-left {
+      display: none;
+    }
+    
+    .main-content {
+      width: 70%;
+    }
+    
+    .sidebar-right {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+    
+    .main-content,
+    .sidebar-right {
+      width: 100%;
+    }
+    
+    .sidebar-right {
+      display: none;
+    }
+    
+    .categories-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

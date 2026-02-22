@@ -1,0 +1,443 @@
+---
+import { SITE } from '../config';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  hideSearch?: boolean;
+}
+
+const { 
+  title, 
+  description = SITE.description,
+  ogImage = SITE.ogImage,
+  type = 'website',
+  noindex = false,
+  hideSearch = false
+} = Astro.props;
+
+const pageTitle = title ? `${title} | ${SITE.title}` : SITE.title;
+const canonicalURL = new URL(Astro.url.pathname, Astro.url);
+---
+
+<!DOCTYPE html>
+<html lang={SITE.lang} data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{pageTitle}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+  {noindex && <meta name="robots" content="noindex, nofollow" />}
+  
+  <!-- Preconnect - 性能优化 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="dns-prefetch" href="https://busuanzi.ibruce.info" />
+  <link rel="dns-prefetch" href="https://v1.hitokoto.cn" />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content={pageTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={new URL(ogImage, canonicalURL)} />
+  <meta property="og:type" content={type} />
+  <meta property="og:site_name" content={SITE.title} />
+  <meta property="og:url" content={canonicalURL} />
+  <meta property="og:locale" content={SITE.lang} />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={pageTitle} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={new URL(ogImage, canonicalURL)} />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href={SITE.favicon} />
+  <link rel="apple-touch-icon" href={SITE.favicon} />
+  
+  <!-- Fonts - 使用 display=swap 优化 FCP -->
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" 
+    rel="stylesheet"
+  />
+  
+  <!-- Bulma CSS - CDN -->
+  <link 
+    rel="stylesheet" 
+    href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    media="print"
+    onload="this.media='all'"
+  />
+  
+  <!-- Font Awesome - CDN -->
+  <link 
+    rel="stylesheet" 
+    href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css"
+    media="print"
+    onload="this.media='all'"
+  />
+  
+  <!-- Critical CSS -->
+  <style is:inline>
+    /* Critical styles for above-the-fold content */
+    :root {
+      --primary: #3273dc;
+      --text: #4a4a4a;
+      --text-strong: #363636;
+      --bg: #f5f5f5;
+      --card-bg: #ffffff;
+      --border: #e5e5e5;
+      --radius: 4px;
+      --radius-lg: 8px;
+    }
+    
+    [data-theme="dark"] {
+      --primary: #00f0ff;
+      --text: #e0e0e0;
+      --text-strong: #ffffff;
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html { 
+      font-size: 16px; 
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: "Ubuntu", "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding-top: 4rem;
+    }
+    
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      min-height: 4rem;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    /* Prevent FOUC */
+    .no-fouc { visibility: hidden; }
+    html.loaded .no-fouc { visibility: visible; }
+  </style>
+  
+  <!-- Theme script - 必须在页面渲染前执行 -->
+  <script is:inline>
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.classList.add('loaded');
+    })();
+  </script>
+</head>
+<body>
+  <Navbar hideSearch={hideSearch} />
+  
+  <main class="main-container">
+    <slot />
+  </main>
+  
+  <Footer />
+  
+  <button class="back-to-top" id="backToTop" aria-label="返回顶部">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+  
+  <script>
+    // 返回顶部
+    const backToTop = document.getElementById('backToTop');
+    if (backToTop) {
+      const toggle = () => {
+        if (window.scrollY > 400) {
+          backToTop.classList.add('is-visible');
+        } else {
+          backToTop.classList.remove('is-visible');
+        }
+      };
+      backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      window.addEventListener('scroll', toggle, { passive: true });
+      toggle();
+    }
+  </script>
+  
+  <!-- Global Styles -->
+  <style is:global>
+    /* 卡片样式 */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      margin-bottom: 1.5rem;
+    }
+    
+    [data-theme="dark"] .card {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    [data-theme="dark"] .card:hover {
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
+    }
+    
+    .card-header {
+      background: transparent;
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem;
+    }
+    
+    .card-header-title {
+      color: var(--text-strong);
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+    
+    .card-content {
+      padding: 1.5rem;
+    }
+    
+    /* 按钮样式 */
+    .button.is-primary {
+      background: var(--primary);
+      border-color: transparent;
+      color: #fff;
+    }
+    
+    .button.is-primary:hover {
+      background: var(--primary);
+      opacity: 0.9;
+    }
+    
+    /* 标签样式 */
+    .tag {
+      background: var(--tag-bg);
+      color: var(--text);
+      font-size: 0.875rem;
+      border-radius: var(--radius);
+    }
+    
+    .tag.is-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    
+    /* 输入框 */
+    .input, .textarea {
+      background: var(--card-bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    
+    .input:focus, .textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.1);
+    }
+    
+    [data-theme="dark"] .input:focus,
+    [data-theme="dark"] .textarea:focus {
+      box-shadow: 0 0 0 0.125em rgba(0, 240, 255, 0.1);
+    }
+    
+    /* 标题 */
+    .title {
+      color: var(--text-strong);
+      font-weight: 600;
+    }
+    
+    .subtitle {
+      color: var(--text-light);
+    }
+    
+    /* 链接 */
+    a {
+      color: var(--primary);
+      transition: color 0.2s ease;
+    }
+    
+    a:hover {
+      opacity: 0.8;
+    }
+    
+    /* 代码块 - 自适应主题 */
+    pre {
+      background: #f6f8fa;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+    }
+    
+    [data-theme="dark"] pre {
+      background: #0d1117;
+      border-color: #30363d;
+    }
+    
+    code {
+      font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+      font-size: 0.9em;
+    }
+    
+    :not(pre) > code {
+      background: var(--tag-bg);
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      color: var(--text-strong);
+    }
+    
+    /* 引用块 */
+    blockquote {
+      border-left: 4px solid var(--primary);
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 0;
+      background: var(--tag-bg);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--text-light);
+      font-style: italic;
+    }
+    
+    /* 表格 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    
+    th, td {
+      padding: 0.875rem;
+      border: 1px solid var(--border);
+    }
+    
+    th {
+      background: var(--tag-bg);
+      font-weight: 600;
+    }
+    
+    /* 返回顶部按钮 */
+    .back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .back-to-top.is-visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .back-to-top:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    [data-theme="dark"] .back-to-top {
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+    }
+    
+    /* 滚动条 */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-light);
+    }
+    
+    /* 选中文字 */
+    ::selection {
+      background: rgba(50, 115, 220, 0.2);
+      color: var(--text-strong);
+    }
+    
+    [data-theme="dark"] ::selection {
+      background: rgba(0, 240, 255, 0.2);
+    }
+    
+    /* 响应式 */
+    @media (max-width: 1024px) {
+      html {
+        font-size: 15px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      html {
+        font-size: 14px;
+      }
+      
+      body {
+        padding-top: 3.5rem;
+      }
+      
+      .card-content {
+        padding: 1rem;
+      }
+      
+      .back-to-top {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1rem;
+        bottom: 1rem;
+        right: 1rem;
+      }
+    }
+  </style>
+</body>
+</html>

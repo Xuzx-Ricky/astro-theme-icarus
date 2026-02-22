@@ -1,0 +1,109 @@
+---
+import { FRIEND_LINKS } from '../config';
+---
+
+{FRIEND_LINKS.length > 0 && (
+  <div class="card friend-links-widget">
+    <div class="card-header">
+      <p class="card-header-title">
+        <i class="fas fa-link mr-2"></i>
+        友情链接
+      </p>
+    </div>
+    <div class="card-content">
+      <div class="friend-links">
+        {FRIEND_LINKS.map(link => (
+          <a 
+            href={link.url} 
+            target="_blank" 
+            rel="noopener" 
+            class="friend-link"
+            title={link.name}
+          >
+            {link.avatar ? (
+              <img src={link.avatar} alt={link.name} class="friend-avatar" loading="lazy" />
+            ) : (
+              <div class="friend-avatar friend-avatar-placeholder">
+                {link.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span class="friend-name">{link.name}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  .friend-links-widget {
+    margin-bottom: 2rem;
+  }
+  
+  .friend-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 1rem;
+  }
+  
+  .friend-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text);
+    padding: 0.75rem 0.5rem;
+    border-radius: var(--radius-lg);
+    background: var(--tag-bg);
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+  }
+  
+  .friend-link:hover {
+    background: var(--card-bg);
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  [data-theme="dark"] .friend-link:hover {
+    box-shadow: 0 4px 20px rgba(0, 240, 255, 0.2);
+  }
+  
+  .friend-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.5rem;
+    transition: transform 0.3s ease;
+  }
+  
+  .friend-link:hover .friend-avatar {
+    transform: scale(1.1);
+  }
+  
+  .friend-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  
+  .friend-name {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  
+  .friend-link:hover .friend-name {
+    color: var(--primary);
+  }
+</style>

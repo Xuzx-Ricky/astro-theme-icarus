@@ -1,0 +1,218 @@
+---
+import { SITE, NAV_LINKS } from '../config';
+
+interface Props {
+  hideSearch?: boolean;
+}
+
+const { hideSearch = false } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+// 页眉文字配置
+const headerTitle = SITE.logo ? '' : (SITE.subtitle || SITE.title);
+const headerLogo = SITE.logo;
+---
+
+<nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+  <div class="container">
+    <div class="navbar-brand">
+      <a class="navbar-item logo" href="/">
+        {headerLogo && (
+          <img src={headerLogo} alt={SITE.title} class="logo-img" />
+        )}
+        <span class="logo-text">{headerTitle || SITE.title}</span>
+      </a>
+      
+      <button class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </button>
+    </div>
+    
+    <div id="navbarMenu" class="navbar-menu">
+      <div class="navbar-start">
+        {NAV_LINKS.map(link => (
+          <a 
+            href={link.href} 
+            class={`navbar-item ${currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href)) ? 'is-active' : ''}`}
+          >
+            <span class="nav-icon">
+              <i class={`fas ${link.icon}`}></i>
+            </span>
+            <span class="nav-label">{link.label}</span>
+          </a>
+        ))}
+      </div>
+      
+      <div class="navbar-end">
+        {/* RSS订阅 */}
+        <a href="/rss.xml" class="navbar-item nav-action" aria-label="RSS订阅" title="RSS订阅">
+          <i class="fas fa-rss"></i>
+        </a>
+        
+        {/* 主题切换 */}
+        <button class="navbar-item nav-action" id="themeToggle" aria-label="切换主题" title="切换主题">
+          <i class="fas fa-sun light-icon"></i>
+          <i class="fas fa-moon dark-icon"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  // 移动端菜单
+  const navbarBurger = document.querySelector('.navbar-burger');
+  const navbarMenu = document.getElementById('navbarMenu');
+  
+  if (navbarBurger && navbarMenu) {
+    navbarBurger.addEventListener('click', () => {
+      navbarBurger.classList.toggle('is-active');
+      navbarMenu.classList.toggle('is-active');
+    });
+  }
+  
+  // 主题切换
+  const themeToggle = document.getElementById('themeToggle');
+  const html = document.documentElement;
+  
+  function updateThemeIcon(theme: string) {
+    const lightIcon = themeToggle?.querySelector('.light-icon');
+    const darkIcon = themeToggle?.querySelector('.dark-icon');
+    
+    if (lightIcon && darkIcon) {
+      if (theme === 'dark') {
+        lightIcon.classList.add('is-hidden');
+        darkIcon.classList.remove('is-hidden');
+      } else {
+        lightIcon.classList.remove('is-hidden');
+        darkIcon.classList.add('is-hidden');
+      }
+    }
+  }
+  
+  updateThemeIcon(html.getAttribute('data-theme') || 'light');
+  
+  themeToggle?.addEventListener('click', () => {
+    const currentTheme = html.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+  });
+</script>
+
+<style>
+  .navbar {
+    background: var(--navbar-bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    min-height: 4rem;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 700;
+    color: var(--text-strong) !important;
+    font-size: 1.25rem;
+  }
+  
+  .logo-img {
+    height: 32px;
+    width: auto;
+  }
+  
+  .navbar-item {
+    color: var(--text);
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .nav-label {
+    line-height: 1;
+  }
+  
+  .navbar-item.is-active {
+    color: var(--primary);
+    background: var(--primary-light);
+  }
+  
+  .navbar-item:hover {
+    color: var(--primary);
+    background: var(--hover-bg);
+  }
+  
+  .nav-action {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 1.125rem;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+  }
+  
+  .nav-action:hover {
+    color: var(--primary);
+    background: var(--hover-bg);
+  }
+  
+  .light-icon, .dark-icon {
+    transition: all 0.3s ease;
+  }
+  
+  [data-theme="dark"] .light-icon {
+    display: none;
+  }
+  
+  [data-theme="light"] .dark-icon {
+    display: none;
+  }
+  
+  [data-theme="dark"] .dark-icon {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px var(--neon-cyan);
+  }
+  
+  @media (max-width: 768px) {
+    .navbar {
+      min-height: 3.5rem;
+    }
+    
+    .logo-text {
+      font-size: 1.1rem;
+    }
+    
+    .nav-label {
+      display: none;
+    }
+    
+    .nav-icon {
+      font-size: 1rem;
+    }
+  }
+</style>

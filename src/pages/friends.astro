@@ -1,0 +1,23 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+
+const pageTitle = 'Friends';
+const pageDescription = 'Friends';
+---
+
+<PageLayout 
+  title={pageTitle} 
+  description={pageDescription}
+  showSidebar={true}
+  showComments={true}
+>
+  <i slot="icon" class="fas fa-file"></i>
+  
+  <p>这里是 Friends 页面的内容。</p>
+  
+  <h2>标题 2</h2>
+  <p>你可以在这里添加更多内容...</p>
+  
+  <h2>标题 3</h2>
+  <p>继续添加内容...</p>
+</PageLayout>

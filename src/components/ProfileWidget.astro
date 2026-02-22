@@ -1,0 +1,195 @@
+---
+import { AUTHOR } from '../config';
+import { getAllPosts } from '../utils/helpers';
+
+const posts = await getAllPosts();
+const postCount = posts.length;
+const categoryCount = new Set(posts.map(p => p.data.category)).size;
+const tagCount = new Set(posts.flatMap(p => p.data.tags)).size;
+---
+
+<div class="card profile-widget">
+  <div class="card-content">
+    <div class="profile-avatar">
+      <a href="/about">
+        <img src={AUTHOR.avatar} alt={AUTHOR.name} />
+      </a>
+    </div>
+    
+    <h3 class="profile-name">
+      <a href="/about">{AUTHOR.name}</a>
+    </h3>
+    
+    <p class="profile-bio">{AUTHOR.bio}</p>
+    
+    <div class="profile-stats">
+      <a href="/archives" class="stat-item">
+        <span class="stat-value">{postCount}</span>
+        <span class="stat-label">文章</span>
+      </a>
+      <a href="/categories" class="stat-item">
+        <span class="stat-value">{categoryCount}</span>
+        <span class="stat-label">分类</span>
+      </a>
+      <a href="/tags" class="stat-item">
+        <span class="stat-value">{tagCount}</span>
+        <span class="stat-label">标签</span>
+      </a>
+    </div>
+    
+    <div class="profile-social">
+      {AUTHOR.github && (
+        <a href={AUTHOR.github} target="_blank" rel="noopener" title="GitHub">
+          <i class="fab fa-github"></i>
+        </a>
+      )}
+      {AUTHOR.twitter && (
+        <a href={AUTHOR.twitter} target="_blank" rel="noopener" title="Twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      )}
+      {AUTHOR.email && (
+        <a href={`mailto:${AUTHOR.email}`} title="Email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      )}
+      {AUTHOR.weibo && (
+        <a href={AUTHOR.weibo} target="_blank" rel="noopener" title="微博">
+          <i class="fab fa-weibo"></i>
+        </a>
+      )}
+    </div>
+  </div>
+</div>
+
+<style>
+  .profile-widget {
+    text-align: center;
+  }
+  
+  .profile-avatar {
+    margin-bottom: 1.25rem;
+  }
+  
+  .profile-avatar a {
+    display: inline-block;
+  }
+  
+  .profile-avatar img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  
+  .profile-avatar img:hover {
+    border-color: var(--primary);
+    transform: scale(1.05);
+  }
+  
+  [data-theme="dark"] .profile-avatar img {
+    border-color: var(--border);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+  }
+  
+  [data-theme="dark"] .profile-avatar img:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
+  }
+  
+  .profile-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  
+  .profile-name a {
+    color: var(--text-strong);
+    text-decoration: none;
+  }
+  
+  .profile-name a:hover {
+    color: var(--primary);
+  }
+  
+  .profile-bio {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+  
+  .profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .stat-item {
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    padding: 0.5rem;
+    border-radius: var(--radius);
+  }
+  
+  .stat-item:hover {
+    background: var(--hover-bg);
+  }
+  
+  .stat-item:hover .stat-value {
+    color: var(--primary);
+  }
+  
+  .stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    transition: color 0.2s ease;
+  }
+  
+  .stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+  }
+  
+  .profile-social {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+  
+  .profile-social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--tag-bg);
+    color: var(--text-light);
+    font-size: 1.125rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .profile-social a:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+  
+  [data-theme="dark"] .profile-social a:hover {
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+  }
+</style>

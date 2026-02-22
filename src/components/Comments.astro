@@ -1,0 +1,223 @@
+---
+import { COMMENT_CONFIG } from '../config';
+
+interface Props {
+  path?: string;
+}
+
+const { path = Astro.url.pathname } = Astro.props;
+const { provider } = COMMENT_CONFIG;
+---
+
+<div class="comments-section card">
+  <div class="card-header">
+    <p class="card-header-title">
+      <i class="fas fa-comments mr-2"></i>
+      评论
+    </p>
+  </div>
+  <div class="card-content">
+    {/* Giscus */}
+    {provider === 'giscus' && (
+      <div class="giscus-container">
+        <script
+          src="https://giscus.app/client.js"
+          data-repo={COMMENT_CONFIG.giscus.repo}
+          data-repo-id={COMMENT_CONFIG.giscus.repoId}
+          data-category={COMMENT_CONFIG.giscus.category}
+          data-category-id={COMMENT_CONFIG.giscus.categoryId}
+          data-mapping={COMMENT_CONFIG.giscus.mapping}
+          data-strict="0"
+          data-reactions-enabled={COMMENT_CONFIG.giscus.reactionsEnabled ? '1' : '0'}
+          data-emit-metadata={COMMENT_CONFIG.giscus.emitMetadata ? '1' : '0'}
+          data-input-position={COMMENT_CONFIG.giscus.inputPosition}
+          data-theme={COMMENT_CONFIG.giscus.theme || 'preferred_color_scheme'}
+          data-lang={COMMENT_CONFIG.giscus.lang}
+          data-loading="lazy"
+          crossorigin="anonymous"
+          async
+        />
+      </div>
+    )}
+
+    {/* Gitalk */}
+    {provider === 'gitalk' && (
+      <div id="gitalk-container" class="gitalk-container"></div>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css" />
+      <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" async></script>
+      <script is:inline define:vars={{ config: COMMENT_CONFIG.gitalk }}>
+        document.addEventListener('DOMContentLoaded', () => {
+          if (typeof Gitalk !== 'undefined') {
+            const gitalk = new Gitalk({
+              clientID: config.clientID,
+              clientSecret: config.clientSecret,
+              repo: config.repo,
+              owner: config.owner,
+              admin: config.admin,
+              id: location.pathname.slice(0, 50),
+              distractionFreeMode: false,
+            });
+            gitalk.render('gitalk-container');
+          }
+        });
+      </script>
+    )}
+
+    {/* Valine */}
+    {provider === 'valine' && (
+      <div id="valine-container" class="valine-container"></div>
+      <script src="https://cdn.jsdelivr.net/npm/valine@1/dist/Valine.min.js" async></script>
+      <script is:inline define:vars={{ config: COMMENT_CONFIG.valine }}>
+        document.addEventListener('DOMContentLoaded', () => {
+          if (typeof Valine !== 'undefined') {
+            new Valine({
+              el: '#valine-container',
+              appId: config.appId,
+              appKey: config.appKey,
+              placeholder: config.placeholder,
+              avatar: config.avatar,
+              meta: config.meta,
+              pageSize: config.pageSize,
+              lang: config.lang,
+              path: window.location.pathname,
+            });
+          }
+        });
+      </script>
+    )}
+
+    {/* Waline */}
+    {provider === 'waline' && (
+      <div id="waline-container" class="waline-container"></div>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@waline/client/dist/waline.css" />
+      <script type="module" is:inline define:vars={{ config: COMMENT_CONFIG.waline }}>
+        import { init } from 'https://cdn.jsdelivr.net/npm/@waline/client/dist/waline.js';
+        init({
+          el: '#waline-container',
+          serverURL: config.serverURL,
+          placeholder: config.placeholder,
+          avatar: config.avatar,
+          meta: config.meta,
+          pageSize: config.pageSize,
+          lang: config.lang,
+          path: window.location.pathname,
+        });
+      </script>
+    )}
+
+    {/* Twikoo */}
+    {provider === 'twikoo' && (
+      <div id="twikoo-container" class="twikoo-container"></div>
+      <script src="https://cdn.jsdelivr.net/npm/twikoo@1/dist/twikoo.all.min.js" async></script>
+      <script is:inline define:vars={{ config: COMMENT_CONFIG.twikoo }}>
+        document.addEventListener('DOMContentLoaded', () => {
+          if (typeof twikoo !== 'undefined') {
+            twikoo.init({
+              envId: config.envId,
+              el: '#twikoo-container',
+              region: config.region,
+              path: config.path,
+              lang: config.lang,
+            });
+          }
+        });
+      </script>
+    )}
+
+    {/* Utterances */}
+    {provider === 'utterances' && (
+      <div class="utterances-container">
+        <script
+          src="https://utteranc.es/client.js"
+          repo={COMMENT_CONFIG.utterances.repo}
+          issue-term={COMMENT_CONFIG.utterances.issueTerm}
+          label={COMMENT_CONFIG.utterances.label}
+          theme={COMMENT_CONFIG.utterances.theme}
+          crossorigin="anonymous"
+          async
+        />
+      </div>
+    )}
+
+    {/* Disqus */}
+    {provider === 'disqus' && (
+      <div id="disqus_thread" class="disqus-container"></div>
+      <script is:inline define:vars={{ shortname: COMMENT_CONFIG.disqus.shortname }}>
+        var disqus_config = function () {
+          this.page.url = window.location.href;
+          this.page.identifier = window.location.pathname;
+        };
+        (function() {
+          var d = document, s = d.createElement('script');
+          s.src = 'https://' + shortname + '.disqus.com/embed.js';
+          s.setAttribute('data-timestamp', String(+new Date()));
+          (d.head || d.body).appendChild(s);
+        })();
+      </script>
+    )}
+
+    {/* 畅言云评 */}
+    {provider === 'changyan' && (
+      <div id="SOHUCS" class="changyan-container" sid={path}></div>
+      <script is:inline define:vars={{ config: COMMENT_CONFIG.changyan }}>
+        document.addEventListener('DOMContentLoaded', () => {
+          var appid = config.appid;
+          var conf = config.conf;
+          var width = window.innerWidth || document.documentElement.clientWidth;
+          if (width < 960) {
+            window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+          } else {
+            var loadJs = function(d, a) {
+              var c = document.getElementsByTagName("head")[0] || document.head || document.documentElement;
+              var b = document.createElement("script");
+              b.setAttribute("type", "text/javascript");
+              b.setAttribute("charset", "UTF-8");
+              b.setAttribute("src", d);
+              if (typeof a === "function") {
+                if (window.attachEvent) {
+                  b.onreadystatechange = function() {
+                    var e = b.readyState;
+                    if (e === "loaded" || e === "complete") {
+                      b.onreadystatechange = null;
+                      a();
+                    }
+                  };
+                } else {
+                  b.onload = a;
+                }
+              }
+              c.appendChild(b);
+            };
+            loadJs("https://changyan.sohu.com/upload/changyan.js", function() {
+              window.changyan.api.config({ appid: appid, conf: conf });
+            });
+          }
+        });
+      </script>
+    )}
+  </div>
+</div>
+
+<style>
+  .comments-section {
+    margin-top: 3rem;
+  }
+  
+  .giscus-container,
+  .gitalk-container,
+  .valine-container,
+  .waline-container,
+  .twikoo-container,
+  .utterances-container,
+  .disqus-container,
+  .changyan-container {
+    min-height: 200px;
+  }
+  
+  /* 适配暗色模式 */
+  [data-theme="dark"] .gitalk-container {
+    --gt-color-main: var(--primary);
+    --gt-color-bg: var(--card-bg);
+    --gt-color-text: var(--text);
+  }
+</style>

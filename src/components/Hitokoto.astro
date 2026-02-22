@@ -1,0 +1,218 @@
+---
+import { HITOKOTO_CONFIG } from '../config';
+
+const { enabled, types, maxLength } = HITOKOTO_CONFIG;
+---
+
+{enabled && (
+  <div class="card hitokoto-widget">
+    <div class="card-content">
+      <div class="hitokoto-content">
+        <i class="fas fa-quote-left hitokoto-icon"></i>
+        <p class="hitokoto-text" id="hitokoto-text">
+          <span class="hitokoto-loading">正在加载一言...</span>
+        </p>
+        <p class="hitokoto-from" id="hitokoto-from"></p>
+      </div>
+      <button class="hitokoto-refresh" id="hitokoto-refresh" title="换一句" aria-label="换一句">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+  </div>
+)}
+
+<script is:inline define:vars={{ types, maxLength }}>
+  (function() {
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    async function fetchHitokoto() {
+      const textEl = document.getElementById('hitokoto-text');
+      const fromEl = document.getElementById('hitokoto-from');
+      
+      if (!textEl) return;
+      
+      // 显示加载状态
+      textEl.innerHTML = '<span class="hitokoto-loading">正在加载一言...</span>';
+      if (fromEl) fromEl.textContent = '';
+      
+      try {
+        // 构建请求参数
+        const params = new URLSearchParams();
+        if (types && types.length > 0) {
+          types.forEach(t => params.append('c', t));
+        }
+        if (maxLength) {
+          params.append('max_length', String(maxLength));
+        }
+        
+        const url = 'https://v1.hitokoto.cn/?' + params.toString();
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // 更新内容
+        textEl.textContent = data.hitokoto || '生活不止眼前的苟且，还有诗和远方。';
+        
+        if (fromEl) {
+          const fromText = [];
+          if (data.from) fromText.push(data.from);
+          if (data.from_who) fromText.push(data.from_who);
+          fromEl.textContent = fromText.length > 0 ? '—— ' + fromText.join(' · ') : '';
+        }
+        
+        retryCount = 0;
+      } catch (error) {
+        console.warn('Hitokoto fetch failed:', error);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(fetchHitokoto, 1000 * retryCount);
+          return;
+        }
+        
+        // 使用备用文案
+        const fallbackQuotes = [
+          { text: '生活不止眼前的苟且，还有诗和远方。', from: '' },
+          { text: '星光不问赶路人，时光不负有心人。', from: '' },
+          { text: '愿你出走半生，归来仍是少年。', from: '' },
+          { text: '凡是过往，皆为序章。', from: '莎士比亚' },
+          { text: '保持热爱，奔赴山海。', from: '' },
+        ];
+        
+        const randomQuote = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+        textEl.textContent = randomQuote.text;
+        if (fromEl) fromEl.textContent = randomQuote.from ? '—— ' + randomQuote.from : '';
+      }
+    }
+    
+    // DOM 加载完成后初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fetchHitokoto);
+    } else {
+      fetchHitokoto();
+    }
+    
+    // 刷新按钮
+    const refreshBtn = document.getElementById('hitokoto-refresh');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function() {
+        const icon = this.querySelector('i');
+        if (icon) {
+          icon.classList.add('fa-spin');
+          setTimeout(() => icon.classList.remove('fa-spin'), 500);
+        }
+        retryCount = 0;
+        fetchHitokoto();
+      });
+    }
+  })();
+</script>
+
+<style>
+  .hitokoto-widget {
+    position: relative;
+    margin-bottom: 2rem;
+  }
+  
+  .hitokoto-widget .card-content {
+    padding: 1.5rem;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .hitokoto-content {
+    position: relative;
+    padding: 0 2rem;
+  }
+  
+  .hitokoto-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1.5rem;
+    color: var(--primary);
+    opacity: 0.6;
+  }
+  
+  .hitokoto-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    font-style: italic;
+    min-height: 2rem;
+  }
+  
+  .hitokoto-loading {
+    color: var(--text-light);
+    font-style: normal;
+  }
+  
+  .hitokoto-from {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    text-align: right;
+    min-height: 1.5rem;
+  }
+  
+  .hitokoto-refresh {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    background: var(--tag-bg);
+    color: var(--text-light);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 1;
+  }
+  
+  .hitokoto-refresh:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: rotate(180deg);
+  }
+  
+  [data-theme="dark"] .hitokoto-refresh:hover {
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+  }
+  
+  @media (max-width: 768px) {
+    .hitokoto-widget .card-content {
+      padding: 1.25rem;
+      min-height: 100px;
+    }
+    
+    .hitokoto-content {
+      padding: 0 1.5rem;
+    }
+    
+    .hitokoto-text {
+      font-size: 1rem;
+    }
+  }
+</style>

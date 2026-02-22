@@ -1,0 +1,96 @@
+---
+import { getAllPosts } from '../utils/helpers';
+
+const posts = await getAllPosts();
+
+const groupedPosts = posts.reduce((acc, post) => {
+  const year = new Date(post.data.pubDatetime).getFullYear();
+  if (!acc[year]) acc[year] = [];
+  acc[year].push(post);
+  return acc;
+}, {} as Record<number, typeof posts>);
+
+const years = Object.keys(groupedPosts).sort((a, b) => Number(b) - Number(a));
+---
+
+<div class="card archives-widget">
+  <div class="card-header">
+    <p class="card-header-title">
+      <i class="fas fa-archive mr-2"></i>
+      归档
+    </p>
+  </div>
+  <div class="card-content">
+    <ul class="archive-list">
+      {years.map(year => (
+        <li class="archive-item">
+          <a href={`/archives/#year-${year}`} class="archive-link">
+            <span class="archive-year">
+              <i class="fas fa-calendar-alt"></i>
+              {year}年
+            </span>
+            <span class="archive-count">{groupedPosts[year].length} 篇</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>
+
+<style>
+  .archives-widget {
+    margin-bottom: 2rem;
+  }
+  
+  .archive-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .archive-item {
+    margin-bottom: 0.75rem;
+  }
+  
+  .archive-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .archive-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .archive-link:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+  
+  .archive-year {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .archive-count {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--card-bg);
+    border-radius: 999px;
+    color: var(--text-light);
+    transition: all 0.2s ease;
+  }
+  
+  .archive-link:hover .archive-count {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+</style>

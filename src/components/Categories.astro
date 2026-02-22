@@ -1,0 +1,94 @@
+---
+import { getAllPosts } from '../utils/helpers';
+
+const posts = await getAllPosts();
+const categoryCounts = posts.reduce((acc, post) => {
+  const cat = post.data.category;
+  acc[cat] = (acc[cat] || 0) + 1;
+  return acc;
+}, {} as Record<string, number>);
+
+const categories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+---
+
+<div class="card categories-widget">
+  <div class="card-header">
+    <p class="card-header-title">
+      <i class="fas fa-folder mr-2"></i>
+      分类
+    </p>
+  </div>
+  <div class="card-content">
+    <ul class="category-list">
+      {categories.map(([category, count]) => (
+        <li class="category-item">
+          <a href={`/categories/${category}/`} class="category-link">
+            <span class="category-name">
+              <i class="fas fa-folder-open"></i>
+              {category}
+            </span>
+            <span class="category-count">{count}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>
+
+<style>
+  .categories-widget {
+    margin-bottom: 2rem;
+  }
+  
+  .category-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .category-item {
+    margin-bottom: 0.75rem;
+  }
+  
+  .category-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .category-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .category-link:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+  
+  .category-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .category-count {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--card-bg);
+    border-radius: 999px;
+    color: var(--text-light);
+    transition: all 0.2s ease;
+  }
+  
+  .category-link:hover .category-count {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+</style>

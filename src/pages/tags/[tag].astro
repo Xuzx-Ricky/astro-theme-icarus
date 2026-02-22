@@ -1,0 +1,126 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import ProfileWidget from '../../components/ProfileWidget.astro';
+import RecentPosts from '../../components/RecentPosts.astro';
+import Tags from '../../components/Tags.astro';
+import Comments from '../../components/Comments.astro';
+import { getAllPosts } from '../../utils/helpers';
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts();
+  const allTags = posts.flatMap(post => post.data.tags);
+  const uniqueTags = [...new Set(allTags)];
+  
+  return uniqueTags.map(tag => ({
+    params: { tag },
+    props: { tag },
+  }));
+}
+
+const { tag } = Astro.params;
+const posts = await getAllPosts();
+const tagPosts = posts.filter(post => post.data.tags.includes(tag));
+---
+
+<BaseLayout title={`标签: ${tag}`}>
+  <div class="container">
+    <div class="columns is-variable is-5">
+      {/* 左侧边栏 */}
+      <div class="column is-3 sidebar-left">
+        <div class="sidebar-content">
+          <ProfileWidget />
+        </div>
+      </div>
+      
+      {/* 主内容区 */}
+      <div class="column is-6 main-content">
+        <div class="tag-header card">
+          <div class="card-content has-text-centered">
+            <h1 class="title is-3">
+              <i class="fas fa-tag has-text-primary"></i>
+              {tag}
+            </h1>
+            <p class="subtitle is-6">共 {tagPosts.length} 篇文章</p>
+          </div>
+        </div>
+        
+        <div class="posts-container">
+          {tagPosts.map(post => (
+            <ArticleCard post={post} />
+          ))}
+        </div>
+        
+        {/* 评论区 */}
+        <Comments />
+      </div>
+      
+      {/* 右侧边栏 */}
+      <div class="column is-3 sidebar-right">
+        <div class="sidebar-content">
+          <RecentPosts />
+          <Tags />
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .sidebar-content > * {
+    margin-bottom: 2rem;
+  }
+  
+  .tag-header {
+    margin-bottom: 2rem;
+  }
+  
+  .tag-header .title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tag-header .subtitle {
+    color: var(--text-light);
+  }
+  
+  .posts-container {
+    margin-bottom: 3rem;
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-left {
+      display: none;
+    }
+    
+    .main-content {
+      width: 70%;
+    }
+    
+    .sidebar-right {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+    
+    .main-content,
+    .sidebar-right {
+      width: 100%;
+    }
+    
+    .sidebar-right {
+      display: none;
+    }
+  }
+</style>

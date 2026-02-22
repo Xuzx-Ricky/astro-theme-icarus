@@ -1,0 +1,192 @@
+---
+import { AUTHOR, SITE } from '../config';
+import { formatDate } from '../utils/helpers';
+
+interface Props {
+  title?: string;
+  pubDatetime?: Date;
+  updatedDatetime?: Date;
+  slug?: string;
+}
+
+const { 
+  title = '', 
+  pubDatetime,
+  updatedDatetime,
+  slug = ''
+} = Astro.props;
+
+const currentUrl = Astro.url.href;
+const licenseUrl = 'https://creativecommons.org/licenses/by-nc-sa/4.0/';
+---
+
+<div class="copyright-notice">
+  <div class="copyright-header">
+    <i class="fas fa-copyright"></i>
+    <span>版权声明</span>
+  </div>
+  
+  <div class="copyright-content">
+    <p class="copyright-title">
+      <a href={currentUrl}>{title}</a>
+    </p>
+    
+    <p class="copyright-meta">
+      <span class="copyright-author">
+        <i class="fas fa-user"></i>
+        <a href={AUTHOR.github || '/'}>{AUTHOR.name}</a>
+      </span>
+      
+      {pubDatetime && (
+        <span class="copyright-date">
+          <i class="fas fa-calendar-alt"></i>
+          发布于 {formatDate(pubDatetime)}
+        </span>
+      )}
+      
+      {updatedDatetime && updatedDatetime !== pubDatetime && (
+        <span class="copyright-updated">
+          <i class="fas fa-edit"></i>
+          更新于 {formatDate(updatedDatetime)}
+        </span>
+      )}
+    </p>
+    
+    <div class="copyright-license">
+      <a href={licenseUrl} target="_blank" rel="noopener" class="license-badge">
+        <i class="fab fa-creative-commons"></i>
+        <i class="fab fa-creative-commons-by"></i>
+        <i class="fab fa-creative-commons-nc"></i>
+        <i class="fab fa-creative-commons-sa"></i>
+      </a>
+      <p class="license-text">
+        本作品采用 <a href={licenseUrl} target="_blank" rel="noopener">知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a> 进行许可。
+      </p>
+    </div>
+    
+    <p class="copyright-statement">
+      转载请注明出处，禁止商业用途。
+    </p>
+  </div>
+</div>
+
+<style>
+  .copyright-notice {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+  }
+  
+  .copyright-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .copyright-header i {
+    color: var(--primary);
+  }
+  
+  .copyright-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  
+  .copyright-title a {
+    color: var(--text-strong);
+    text-decoration: none;
+  }
+  
+  .copyright-title a:hover {
+    color: var(--primary);
+  }
+  
+  .copyright-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+  }
+  
+  .copyright-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  
+  .copyright-meta a {
+    color: inherit;
+  }
+  
+  .copyright-meta a:hover {
+    color: var(--primary);
+  }
+  
+  .copyright-license {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+  }
+  
+  .license-badge {
+    display: flex;
+    gap: 0.25rem;
+    font-size: 1.5rem;
+    color: var(--text-light);
+    flex-shrink: 0;
+  }
+  
+  .license-badge:hover {
+    color: var(--primary);
+  }
+  
+  .license-text {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin: 0;
+  }
+  
+  .license-text a {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+  
+  .copyright-statement {
+    font-size: 0.8rem;
+    color: var(--text-lighter);
+    text-align: center;
+    margin: 0;
+  }
+  
+  @media (max-width: 768px) {
+    .copyright-notice {
+      padding: 1rem;
+    }
+    
+    .copyright-license {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .license-badge {
+      font-size: 1.25rem;
+    }
+  }
+</style>

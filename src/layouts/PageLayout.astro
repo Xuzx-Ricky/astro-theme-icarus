@@ -1,0 +1,126 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ProfileWidget from '../components/ProfileWidget.astro';
+import RecentPosts from '../components/RecentPosts.astro';
+import Categories from '../components/Categories.astro';
+import Tags from '../components/Tags.astro';
+import Comments from '../components/Comments.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  showComments?: boolean;
+  showSidebar?: boolean;
+}
+
+const { 
+  title, 
+  description,
+  showComments = true,
+  showSidebar = true
+} = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container">
+    <div class="columns is-variable is-5">
+      {/* 左侧边栏 */}
+      {showSidebar && (
+        <div class="column is-3 sidebar-left">
+          <div class="sidebar-content">
+            <ProfileWidget />
+          </div>
+        </div>
+      )}
+      
+      {/* 主内容区 */}
+      <div class={`column main-content ${showSidebar ? 'is-6' : 'is-9'}`}>
+        <div class="card page-card">
+          <div class="card-header">
+            <p class="card-header-title">
+              <slot name="icon" />
+              {title}
+            </p>
+          </div>
+          <div class="card-content page-content">
+            <slot />
+          </div>
+        </div>
+        
+        {showComments && <Comments />}
+      </div>
+      
+      {/* 右侧边栏 */}
+      {showSidebar && (
+        <div class="column is-3 sidebar-right">
+          <div class="sidebar-content">
+            <RecentPosts />
+            <Categories />
+            <Tags />
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding: 2rem 1rem;
+    max-width: 1400px;
+  }
+  
+  .sidebar-content > * {
+    margin-bottom: 2rem;
+  }
+  
+  .page-card {
+    margin-bottom: 2rem;
+  }
+  
+  .page-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+  
+  .page-content :global(h2) {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-strong);
+  }
+  
+  .page-content :global(p) {
+    margin-bottom: 1.25rem;
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-left {
+      display: none;
+    }
+    
+    .main-content {
+      width: 70%;
+    }
+    
+    .sidebar-right {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+    
+    .main-content,
+    .sidebar-right {
+      width: 100%;
+    }
+    
+    .sidebar-right {
+      display: none;
+    }
+  }
+</style>

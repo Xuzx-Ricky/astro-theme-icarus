@@ -1,0 +1,171 @@
+---
+interface Props {
+  headings: {
+    depth: number;
+    slug: string;
+    text: string;
+  }[];
+}
+
+const { headings } = Astro.props;
+// 只显示 h2 和 h3
+const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
+---
+
+{tocHeadings.length > 0 && (
+  <div class="card toc-widget">
+    <div class="card-header">
+      <p class="card-header-title">
+        <i class="fas fa-list mr-2"></i>
+        目录
+      </p>
+    </div>
+    <div class="card-content toc-content">
+      <nav class="toc-nav">
+        <ul class="toc-list">
+          {tocHeadings.map(heading => (
+            <li class={`toc-item toc-level-${heading.depth}`}>
+              <a href={`#${heading.slug}`} class="toc-link" data-heading={heading.slug}>
+                {heading.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  </div>
+)}
+
+<script>
+  // TOC 高亮和滚动监听
+  (function() {
+    const tocLinks = document.querySelectorAll('.toc-link');
+    const headings = document.querySelectorAll('h2[id], h3[id]');
+    
+    if (!tocLinks.length || !headings.length) return;
+    
+    // 使用 IntersectionObserver 监听标题进入视口
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            tocLinks.forEach(link => {
+              link.classList.remove('is-active');
+              if (link.getAttribute('data-heading') === id) {
+                link.classList.add('is-active');
+              }
+            });
+          }
+        });
+      },
+      { 
+        rootMargin: '-80px 0px -70% 0px',
+        threshold: 0
+      }
+    );
+    
+    headings.forEach(heading => observer.observe(heading));
+    
+    // 平滑滚动
+    tocLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('data-heading');
+        const target = document.getElementById(targetId);
+        if (target) {
+          const offset = 80;
+          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+          history.pushState(null, '', `#${targetId}`);
+        }
+      });
+    });
+  })();
+</script>
+
+<style>
+  .toc-widget {
+    position: sticky;
+    top: 5rem;
+    margin-bottom: 2rem;
+    max-height: calc(100vh - 7rem);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .toc-content {
+    overflow-y: auto;
+    padding: 1rem;
+    flex: 1;
+  }
+  
+  /* 自定义滚动条 */
+  .toc-content::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .toc-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .toc-content::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+  
+  .toc-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-light);
+  }
+  
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .toc-item {
+    margin-bottom: 0.25rem;
+  }
+  
+  .toc-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .toc-level-3 {
+    padding-left: 1rem;
+  }
+  
+  .toc-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 3px solid transparent;
+    line-height: 1.5;
+  }
+  
+  .toc-link:hover {
+    color: var(--primary);
+    background: var(--hover-bg);
+  }
+  
+  .toc-link.is-active {
+    color: var(--primary);
+    background: var(--primary-light);
+    border-left-color: var(--primary);
+    font-weight: 500;
+  }
+  
+  @media (max-width: 1024px) {
+    .toc-widget {
+      display: none;
+    }
+  }
+</style>

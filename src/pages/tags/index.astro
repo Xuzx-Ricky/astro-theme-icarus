@@ -1,0 +1,175 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProfileWidget from '../../components/ProfileWidget.astro';
+import RecentPosts from '../../components/RecentPosts.astro';
+import Categories from '../../components/Categories.astro';
+import Comments from '../../components/Comments.astro';
+import { getAllPosts } from '../../utils/helpers';
+
+const posts = await getAllPosts();
+
+const tagCounts = posts.reduce((acc, post) => {
+  post.data.tags.forEach(tag => {
+    acc[tag] = (acc[tag] || 0) + 1;
+  });
+  return acc;
+}, {} as Record<string, number>);
+
+const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+
+const maxCount = Math.max(...tags.map(t => t[1]));
+const minCount = Math.min(...tags.map(t => t[1]));
+---
+
+<BaseLayout title="标签">
+  <div class="container">
+    <div class="columns is-variable is-5">
+      {/* 左侧边栏 */}
+      <div class="column is-3 sidebar-left">
+        <div class="sidebar-content">
+          <ProfileWidget />
+        </div>
+      </div>
+      
+      {/* 主内容区 */}
+      <div class="column is-6 main-content">
+        <div class="card tags-page">
+          <div class="card-header">
+            <p class="card-header-title">
+              <i class="fas fa-tags mr-2"></i>
+              标签云
+            </p>
+          </div>
+          <div class="card-content">
+            <div class="tags-cloud">
+              {tags.map(([tag, count]) => {
+                const size = minCount === maxCount 
+                  ? 1 
+                  : 0.9 + (count - minCount) / (maxCount - minCount) * 0.5;
+                return (
+                  <a 
+                    href={`/tags/${tag}/`} 
+                    class="tag-cloud-item"
+                    style={`font-size: ${size}rem;`}
+                  >
+                    {tag}
+                    <span class="tag-cloud-count">{count}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        
+        {/* 评论区 */}
+        <Comments />
+      </div>
+      
+      {/* 右侧边栏 */}
+      <div class="column is-3 sidebar-right">
+        <div class="sidebar-content">
+          <RecentPosts />
+          <Categories />
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .sidebar-content > * {
+    margin-bottom: 2rem;
+  }
+  
+  .tags-page {
+    margin-bottom: 3rem;
+  }
+  
+  .tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .tag-cloud-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius-lg);
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  
+  .tag-cloud-item:hover {
+    background: var(--card-bg);
+    border-color: var(--primary);
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  [data-theme="dark"] .tag-cloud-item:hover {
+    box-shadow: 0 4px 20px rgba(0, 240, 255, 0.3);
+  }
+  
+  .tag-cloud-count {
+    font-size: 0.75em;
+    padding: 0.25rem 0.75rem;
+    background: var(--card-bg);
+    border-radius: 999px;
+    color: var(--text-light);
+    transition: all 0.2s ease;
+  }
+  
+  .tag-cloud-item:hover .tag-cloud-count {
+    background: var(--primary);
+    color: #fff;
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-left {
+      display: none;
+    }
+    
+    .main-content {
+      width: 70%;
+    }
+    
+    .sidebar-right {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+    
+    .main-content,
+    .sidebar-right {
+      width: 100%;
+    }
+    
+    .sidebar-right {
+      display: none;
+    }
+    
+    .tags-cloud {
+      gap: 0.75rem;
+    }
+    
+    .tag-cloud-item {
+      padding: 0.5rem 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,223 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProfileWidget from '../components/ProfileWidget.astro';
+import RecentPosts from '../components/RecentPosts.astro';
+import Categories from '../components/Categories.astro';
+import Tags from '../components/Tags.astro';
+import Comments from '../components/Comments.astro';
+import { AUTHOR, SITE } from '../config';
+---
+
+<BaseLayout title="关于">
+  <div class="container">
+    <div class="columns is-variable is-5">
+      {/* 左侧边栏 */}
+      <div class="column is-3 sidebar-left">
+        <div class="sidebar-content">
+          <ProfileWidget />
+        </div>
+      </div>
+      
+      {/* 主内容区 */}
+      <div class="column is-6 main-content">
+        <div class="card about-page">
+          <div class="card-content">
+            <div class="about-header has-text-centered">
+              <img src={AUTHOR.avatar} alt={AUTHOR.name} class="about-avatar" />
+              <h1 class="title is-2">{AUTHOR.name}</h1>
+              <p class="subtitle is-5">{AUTHOR.bio}</p>
+              
+              <div class="about-social">
+                {AUTHOR.github && (
+                  <a href={AUTHOR.github} target="_blank" rel="noopener" title="GitHub">
+                    <i class="fab fa-github"></i>
+                  </a>
+                )}
+                {AUTHOR.twitter && (
+                  <a href={AUTHOR.twitter} target="_blank" rel="noopener" title="Twitter">
+                    <i class="fab fa-twitter"></i>
+                  </a>
+                )}
+                {AUTHOR.email && (
+                  <a href={`mailto:${AUTHOR.email}`} title="Email">
+                    <i class="fas fa-envelope"></i>
+                  </a>
+                )}
+                {AUTHOR.weibo && (
+                  <a href={AUTHOR.weibo} target="_blank" rel="noopener" title="微博">
+                    <i class="fab fa-weibo"></i>
+                  </a>
+                )}
+              </div>
+            </div>
+            
+            <div class="content about-content">
+              <h2>关于我</h2>
+              <p>
+                欢迎来到 {SITE.title}！我是 {AUTHOR.name}，一名热爱技术的开发者。
+                这个博客使用 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 构建，
+                采用 <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a> 主题风格。
+              </p>
+              
+              <h2>技术栈</h2>
+              <ul>
+                <li><strong>前端:</strong> Astro, React, Vue, TypeScript</li>
+                <li><strong>后端:</strong> Node.js, Python, Go</li>
+                <li><strong>数据库:</strong> PostgreSQL, MongoDB, Redis</li>
+                <li><strong>工具:</strong> Docker, Git, Linux</li>
+              </ul>
+              
+              <h2>联系方式</h2>
+              <p>如果你有任何问题或建议，欢迎通过以下方式联系我：</p>
+              <ul>
+                {AUTHOR.github && <li>GitHub: <a href={AUTHOR.github} target="_blank" rel="noopener">{AUTHOR.github}</a></li>}
+                {AUTHOR.email && <li>Email: <a href={`mailto:${AUTHOR.email}`}>{AUTHOR.email}</a></li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        {/* 评论区 */}
+        <Comments />
+      </div>
+      
+      {/* 右侧边栏 */}
+      <div class="column is-3 sidebar-right">
+        <div class="sidebar-content">
+          <RecentPosts />
+          <Categories />
+          <Tags />
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .sidebar-content > * {
+    margin-bottom: 2rem;
+  }
+  
+  .about-page {
+    margin-bottom: 3rem;
+  }
+  
+  .about-header {
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  
+  .about-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1.5rem;
+    border: 4px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  
+  .about-avatar:hover {
+    border-color: var(--primary);
+    transform: scale(1.05);
+  }
+  
+  [data-theme="dark"] .about-avatar {
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+  }
+  
+  .about-header .title {
+    margin-bottom: 0.75rem;
+  }
+  
+  .about-header .subtitle {
+    color: var(--text-light);
+  }
+  
+  .about-social {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  
+  .about-social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--tag-bg);
+    color: var(--text-light);
+    font-size: 1.5rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .about-social a:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-4px);
+  }
+  
+  [data-theme="dark"] .about-social a:hover {
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+  }
+  
+  .about-content {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  
+  .about-content h2 {
+    color: var(--text-strong);
+    margin-top: 2.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+  }
+  
+  .about-content h2:first-child {
+    margin-top: 0;
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-left {
+      display: none;
+    }
+    
+    .main-content {
+      width: 70%;
+    }
+    
+    .sidebar-right {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+    
+    .main-content,
+    .sidebar-right {
+      width: 100%;
+    }
+    
+    .sidebar-right {
+      display: none;
+    }
+    
+    .about-avatar {
+      width: 120px;
+      height: 120px;
+    }
+  }
+</style>
