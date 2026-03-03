@@ -12,7 +12,7 @@ const tagCount = new Set(posts.flatMap(p => p.data.tags)).size;
   <div class="card-content">
     <div class="profile-avatar">
       <a href="/about">
-        <img src={AUTHOR.avatar} alt={AUTHOR.name} />
+        <img src={AUTHOR.avatar} alt={AUTHOR.name} loading="eager" />
       </a>
     </div>
     
@@ -65,15 +65,12 @@ const tagCount = new Set(posts.flatMap(p => p.data.tags)).size;
 <style>
   .profile-widget {
     text-align: center;
+    margin-bottom: 2rem;
+    /* 不设置 sticky，随页面滚动 */
   }
   
-  .profile-avatar {
-    margin-bottom: 1.25rem;
-  }
-  
-  .profile-avatar a {
-    display: inline-block;
-  }
+  .profile-avatar { margin-bottom: 1.25rem; }
+  .profile-avatar a { display: inline-block; }
   
   .profile-avatar img {
     width: 120px;
@@ -90,13 +87,7 @@ const tagCount = new Set(posts.flatMap(p => p.data.tags)).size;
   }
   
   [data-theme="dark"] .profile-avatar img {
-    border-color: var(--border);
     box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
-  }
-  
-  [data-theme="dark"] .profile-avatar img:hover {
-    border-color: var(--neon-cyan);
-    box-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
   }
   
   .profile-name {
@@ -105,14 +96,8 @@ const tagCount = new Set(posts.flatMap(p => p.data.tags)).size;
     margin-bottom: 0.75rem;
   }
   
-  .profile-name a {
-    color: var(--text-strong);
-    text-decoration: none;
-  }
-  
-  .profile-name a:hover {
-    color: var(--primary);
-  }
+  .profile-name a { color: var(--text-strong); text-decoration: none; }
+  .profile-name a:hover { color: var(--primary); }
   
   .profile-bio {
     color: var(--text-light);
@@ -140,13 +125,8 @@ const tagCount = new Set(posts.flatMap(p => p.data.tags)).size;
     border-radius: var(--radius);
   }
   
-  .stat-item:hover {
-    background: var(--hover-bg);
-  }
-  
-  .stat-item:hover .stat-value {
-    color: var(--primary);
-  }
+  .stat-item:hover { background: var(--hover-bg); }
+  .stat-item:hover .stat-value { color: var(--primary); }
   
   .stat-value {
     display: block;

@@ -1,0 +1,515 @@
+---
+import { RIGHT_MENU_CONFIG, SITE } from '../config';
+
+const { enabled, items, searchEngines } = RIGHT_MENU_CONFIG;
+---
+
+{enabled && (
+  <>
+    {/* 右键菜单遮罩 */}
+    <div id="rightmenu-mask" class="rightmenu-mask"></div>
+    
+    {/* 右键菜单 */}
+    <div id="rightMenu" class="right-menu">
+      {/* 导航组 */}
+      {items.navigation && (
+        <div class="menu-group menu-small">
+          <button class="menu-item" id="menu-backward" title="后退">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <button class="menu-item" id="menu-forward" title="前进">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <button class="menu-item" id="menu-refresh" title="刷新">
+            <i class="fas fa-redo"></i>
+          </button>
+          <button class="menu-item" id="menu-top" title="回到顶部">
+            <i class="fas fa-arrow-up"></i>
+          </button>
+        </div>
+      )}
+      
+      {/* 复制粘贴组 */}
+      {items.copyPaste && (
+        <div class="menu-group menu-line">
+          <button class="menu-item" id="menu-copytext" style="display: none;">
+            <i class="fas fa-copy"></i>
+            <span>复制选中文本</span>
+          </button>
+          <button class="menu-item" id="menu-pastetext" style="display: none;">
+            <i class="fas fa-paste"></i>
+            <span>粘贴文本</span>
+          </button>
+        </div>
+      )}
+      
+      {/* 链接操作组 */}
+      <div class="menu-group menu-line" id="menu-link-group" style="display: none;">
+        <button class="menu-item" id="menu-copylink">
+          <i class="fas fa-link"></i>
+          <span>复制链接</span>
+        </button>
+        <button class="menu-item" id="menu-newwindow">
+          <i class="fas fa-external-link-alt"></i>
+          <span>新窗口打开</span>
+        </button>
+      </div>
+      
+      {/* 图片操作组 */}
+      <div class="menu-group menu-line" id="menu-image-group" style="display: none;">
+        <button class="menu-item" id="menu-copyimg">
+          <i class="fas fa-image"></i>
+          <span>复制图片</span>
+        </button>
+        <button class="menu-item" id="menu-downloadimg">
+          <i class="fas fa-download"></i>
+          <span>下载图片</span>
+        </button>
+      </div>
+      
+      {/* 搜索组 */}
+      {items.search && searchEngines.length > 0 && (
+        <div class="menu-group menu-line" id="menu-search-group" style="display: none;">
+          <div class="menu-label">
+            <i class="fas fa-search"></i>
+            <span>搜索选中文本</span>
+          </div>
+          {searchEngines.map(engine => (
+            <button class="menu-item menu-search-engine" data-url={engine.url}>
+              <i class={`fas ${engine.icon}`}></i>
+              <span>{engine.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {/* 功能组 */}
+      <div class="menu-group menu-line">
+        {items.themeToggle && (
+          <button class="menu-item" id="menu-darkmode">
+            <i class="fas fa-moon"></i>
+            <span>切换主题</span>
+          </button>
+        )}
+        {items.readMode && (
+          <button class="menu-item" id="menu-readmode" style="display: none;">
+            <i class="fas fa-book-open"></i>
+            <span>阅读模式</span>
+          </button>
+        )}
+      </div>
+      
+      {/* 页面导航组 */}
+      <div class="menu-group menu-line">
+        <a class="menu-item" href="/">
+          <i class="fas fa-home"></i>
+          <span>首页</span>
+        </a>
+        <a class="menu-item" href="/archives">
+          <i class="fas fa-archive"></i>
+          <span>归档</span>
+        </a>
+        <a class="menu-item" href="/about">
+          <i class="fas fa-user"></i>
+          <span>关于</span>
+        </a>
+      </div>
+    </div>
+  </>
+)}
+
+<script is:inline define:vars={{ enabled }}>
+  (function() {
+    if (!enabled) return;
+    
+    const rightMenu = document.getElementById('rightMenu');
+    const rightmenuMask = document.getElementById('rightmenu-mask');
+    
+    if (!rightMenu || !rightmenuMask) return;
+    
+    let selectedText = '';
+    let currentLink = '';
+    let currentImage = '';
+    
+    // 获取选中文本
+    function getSelectedText() {
+      return window.getSelection()?.toString().trim() || '';
+    }
+    
+    // 显示/隐藏菜单
+    function showMenu(show, x = 0, y = 0) {
+      if (show) {
+        rightMenu.style.left = x + 'px';
+        rightMenu.style.top = y + 'px';
+        rightMenu.style.display = 'block';
+        rightmenuMask.style.display = 'block';
+        
+        // 确保菜单不超出视口
+        const menuRect = rightMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        if (x + menuRect.width > viewportWidth) {
+          rightMenu.style.left = (x - menuRect.width) + 'px';
+        }
+        if (y + menuRect.height > viewportHeight) {
+          rightMenu.style.top = (y - menuRect.height) + 'px';
+        }
+      } else {
+        rightMenu.style.display = 'none';
+        rightmenuMask.style.display = 'none';
+      }
+    }
+    
+    // 隐藏菜单
+    function hideMenu() {
+      showMenu(false);
+    }
+    
+    // 右键事件
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      
+      selectedText = getSelectedText();
+      currentLink = '';
+      currentImage = '';
+      
+      // 检查点击目标
+      const target = e.target;
+      
+      // 检查是否为链接
+      const linkElement = target.closest('a');
+      if (linkElement) {
+        currentLink = linkElement.href;
+      }
+      
+      // 检查是否为图片
+      if (target.tagName === 'IMG') {
+        currentImage = target.src;
+      }
+      
+      // 检查是否为输入框
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+      
+      // 显示/隐藏菜单项
+      const copyTextBtn = document.getElementById('menu-copytext');
+      const pasteTextBtn = document.getElementById('menu-pastetext');
+      const linkGroup = document.getElementById('menu-link-group');
+      const imageGroup = document.getElementById('menu-image-group');
+      const searchGroup = document.getElementById('menu-search-group');
+      const readModeBtn = document.getElementById('menu-readmode');
+      
+      if (copyTextBtn) copyTextBtn.style.display = selectedText ? 'flex' : 'none';
+      if (pasteTextBtn) pasteTextBtn.style.display = isInput ? 'flex' : 'none';
+      if (linkGroup) linkGroup.style.display = currentLink ? 'block' : 'none';
+      if (imageGroup) imageGroup.style.display = currentImage ? 'block' : 'none';
+      if (searchGroup) searchGroup.style.display = selectedText ? 'block' : 'none';
+      
+      // 检查是否在文章页面
+      const isArticlePage = document.querySelector('article') !== null;
+      if (readModeBtn) readModeBtn.style.display = isArticlePage ? 'flex' : 'none';
+      
+      showMenu(true, e.pageX, e.pageY);
+    });
+    
+    // 点击遮罩隐藏菜单
+    rightmenuMask.addEventListener('click', hideMenu);
+    
+    // 导航功能
+    document.getElementById('menu-backward')?.addEventListener('click', () => {
+      history.back();
+      hideMenu();
+    });
+    
+    document.getElementById('menu-forward')?.addEventListener('click', () => {
+      history.forward();
+      hideMenu();
+    });
+    
+    document.getElementById('menu-refresh')?.addEventListener('click', () => {
+      location.reload();
+      hideMenu();
+    });
+    
+    document.getElementById('menu-top')?.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      hideMenu();
+    });
+    
+    // 复制文本
+    document.getElementById('menu-copytext')?.addEventListener('click', () => {
+      if (selectedText) {
+        navigator.clipboard.writeText(selectedText).then(() => {
+          showToast('已复制到剪贴板');
+        });
+      }
+      hideMenu();
+    });
+    
+    // 粘贴文本
+    document.getElementById('menu-pastetext')?.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+          const start = activeElement.selectionStart || 0;
+          const end = activeElement.selectionEnd || 0;
+          const value = activeElement.value;
+          activeElement.value = value.substring(0, start) + text + value.substring(end);
+          activeElement.selectionStart = activeElement.selectionEnd = start + text.length;
+        }
+      } catch (err) {
+        console.error('粘贴失败:', err);
+      }
+      hideMenu();
+    });
+    
+    // 复制链接
+    document.getElementById('menu-copylink')?.addEventListener('click', () => {
+      if (currentLink) {
+        navigator.clipboard.writeText(currentLink).then(() => {
+          showToast('链接已复制');
+        });
+      }
+      hideMenu();
+    });
+    
+    // 新窗口打开
+    document.getElementById('menu-newwindow')?.addEventListener('click', () => {
+      if (currentLink) {
+        window.open(currentLink, '_blank');
+      }
+      hideMenu();
+    });
+    
+    // 复制图片
+    document.getElementById('menu-copyimg')?.addEventListener('click', async () => {
+      if (currentImage) {
+        try {
+          const response = await fetch(currentImage);
+          const blob = await response.blob();
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          showToast('图片已复制');
+        } catch (err) {
+          console.error('复制图片失败:', err);
+          showToast('复制失败，请尝试下载');
+        }
+      }
+      hideMenu();
+    });
+    
+    // 下载图片
+    document.getElementById('menu-downloadimg')?.addEventListener('click', () => {
+      if (currentImage) {
+        const a = document.createElement('a');
+        a.href = currentImage;
+        a.download = 'image';
+        a.target = '_blank';
+        a.click();
+      }
+      hideMenu();
+    });
+    
+    // 搜索引擎
+    document.querySelectorAll('.menu-search-engine').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = btn.dataset.url;
+        if (url && selectedText) {
+          window.open(url + encodeURIComponent(selectedText), '_blank');
+        }
+        hideMenu();
+      });
+    });
+    
+    // 切换主题
+    document.getElementById('menu-darkmode')?.addEventListener('click', () => {
+      const themeToggle = document.getElementById('themeToggle');
+      if (themeToggle) themeToggle.click();
+      hideMenu();
+    });
+    
+    // 阅读模式
+    let readMode = false;
+    document.getElementById('menu-readmode')?.addEventListener('click', () => {
+      readMode = !readMode;
+      const article = document.querySelector('article');
+      const sidebars = document.querySelectorAll('.sidebar-left, .sidebar-right');
+      const navbar = document.querySelector('.navbar');
+      const footer = document.querySelector('.footer');
+      
+      if (readMode) {
+        sidebars.forEach(sb => (sb as HTMLElement).style.display = 'none');
+        if (navbar) (navbar as HTMLElement).style.display = 'none';
+        if (footer) (footer as HTMLElement).style.display = 'none';
+        if (article) {
+          article.style.maxWidth = '800px';
+          article.style.margin = '0 auto';
+        }
+        document.body.style.paddingTop = '2rem';
+        showToast('阅读模式已开启，点击页面退出');
+        
+        // 点击退出阅读模式
+        document.addEventListener('click', function exitReadMode(e) {
+          if (e.target !== rightMenu && !rightMenu.contains(e.target)) {
+            readMode = false;
+            sidebars.forEach(sb => (sb as HTMLElement).style.display = '');
+            if (navbar) (navbar as HTMLElement).style.display = '';
+            if (footer) (footer as HTMLElement).style.display = '';
+            if (article) {
+              article.style.maxWidth = '';
+              article.style.margin = '';
+            }
+            document.body.style.paddingTop = '';
+            document.removeEventListener('click', exitReadMode);
+          }
+        });
+      }
+      hideMenu();
+    });
+    
+    // Toast 提示
+    function showToast(message) {
+      const existingToast = document.querySelector('.rightmenu-toast');
+      if (existingToast) existingToast.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'rightmenu-toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 2000);
+    }
+  })();
+</script>
+
+<style is:global>
+  .rightmenu-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    z-index: 9998;
+    display: none;
+  }
+
+  .right-menu {
+    position: fixed;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-hover);
+    z-index: 9999;
+    display: none;
+    min-width: 180px;
+    padding: 0.5rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .menu-group {
+    padding: 0.25rem 0;
+  }
+
+  .menu-group:not(:last-child) {
+    border-bottom: 1px dashed var(--border-light);
+  }
+
+  .menu-small {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .menu-small .menu-item {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .menu-line .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    width: 100%;
+    text-align: left;
+    border-radius: var(--radius);
+  }
+
+  .menu-item {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .menu-item:hover {
+    background: var(--hover-bg);
+    color: var(--primary);
+  }
+
+  .menu-item i {
+    width: 1.25rem;
+    text-align: center;
+    color: var(--text-light);
+  }
+
+  .menu-item:hover i {
+    color: var(--primary);
+  }
+
+  .menu-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-lighter);
+    font-weight: 500;
+  }
+
+  .rightmenu-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-hover);
+    border: 1px solid var(--border);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+  }
+
+  .rightmenu-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    .right-menu {
+      min-width: 160px;
+    }
+    .menu-line .menu-item {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+    }
+  }
+</style>

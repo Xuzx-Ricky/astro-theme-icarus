@@ -10,54 +10,60 @@ import { formatDate, calculateReadingTime, getWordCount } from '../../utils/help
 
 export async function getStaticPaths() {
   const { getCollection } = await import('astro:content');
-  const posts = await getCollection('blog', ({ data }) => {
-    return import.meta.env.DEV || !data.draft;
-  });
-  
-  return posts.map(post => ({
-    params: { slug: post.slug },
-    props: { post },
-  }));
+  const posts = await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft);
+  return posts.map(post => ({ params: { slug: post.slug }, props: { post } }));
 }
 
 const { post } = Astro.props;
 const { Content, headings } = await post.render();
-
 const readingTime = calculateReadingTime(post.body);
 const wordCount = getWordCount(post.body);
 
+// 文章级别配置
+const showToc = post.data.toc !== false;
+const showComment = post.data.comment !== false;
+const showShare = post.data.showShare !== false;
+const showDonation = post.data.showDonation === true;
+const showSidebar = post.data.showSidebar !== false;
+const layout = post.data.layout || 'three-column';
+const isSticky = post.data.sticky === true;
+
 // 获取前后文章
 const { getCollection } = await import('astro:content');
-const posts = await getCollection('blog', ({ data }) => {
-  return import.meta.env.DEV || !data.draft;
-});
-const sortedPosts = posts.sort((a, b) => 
-  b.data.pubDatetime.valueOf() - a.data.pubDatetime.valueOf()
-);
+const posts = await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft);
+const sortedPosts = posts.sort((a, b) => b.data.pubDatetime.valueOf() - a.data.pubDatetime.valueOf());
 const currentIndex = sortedPosts.findIndex(p => p.slug === post.slug);
 const prevPost = currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
 const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
+
+// 根据布局设置列宽
+const mainColumnClass = layout === 'two-column' ? 'is-9' : 'is-8';
+const leftColumnClass = layout === 'two-column' ? 'is-3' : 'is-3';
+const rightColumnClass = layout === 'two-column' ? 'is-0' : 'is-1';
 ---
 
 <BaseLayout 
   title={post.data.title}
   description={post.data.description}
   ogImage={post.data.thumbnail}
+  type="article"
+  keywords={post.data.tags}
+  pubDate={post.data.pubDatetime}
+  modDate={post.data.modDatetime}
 >
   <div class="container">
-    <div class="columns is-variable is-5">
-      {/* 左侧边栏 - Profile + TOC（粘性） */}
-      <div class="column is-3 sidebar-left">
-        <div class="sidebar-sticky">
+    <div class="columns is-variable is-4">
+      {/* 左侧边栏 - Profile（不粘性）+ TOC（粘性） */}
+      {showSidebar && (
+        <div class={`column ${leftColumnClass} sidebar-left`}>
           <ProfileWidget />
-          <TOC headings={headings} />
+          {showToc && <TOC headings={headings} />}
         </div>
-      </div>
+      )}
       
-      {/* 主内容区 - 加宽 */}
-      <div class="column is-7 main-content">
+      {/* 主内容区 */}
+      <div class={`column ${mainColumnClass} main-content`}>
         <article class="card article-page">
-          {/* 文章头图 */}
           {post.data.thumbnail && (
             <div class="article-hero">
               <img src={post.data.thumbnail} alt={post.data.title} loading="eager" />
@@ -65,9 +71,11 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
           )}
           
           <div class="card-content">
-            {/* 文章标题 */}
             <header class="article-header">
-              <h1 class="article-title">{post.data.title}</h1>
+              <h1 class="article-title">
+                {isSticky && <span class="sticky-badge"><i class="fas fa-thumbtack"></i> 置顶</span>}
+                {post.data.title}
+              </h1>
               
               <div class="article-meta">
                 <span class="meta-item">
@@ -95,84 +103,44 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
               </div>
             </header>
             
-            {/* 文章内容 */}
             <div class="content article-body">
               <Content />
             </div>
             
-            {/* 分享 */}
-            <Share 
-              title={post.data.title}
-              url={Astro.url.href}
-              description={post.data.description}
-            />
-            
-            {/* 版权申明 */}
-            <Copyright 
-              title={post.data.title}
-              pubDatetime={post.data.pubDatetime}
-              updatedDatetime={post.data.modDatetime}
-              slug={post.slug}
-            />
-            
-            {/* 打赏 */}
-            <Donation />
+            {showShare && <Share title={post.data.title} url={Astro.url.href} description={post.data.description} />}
+            <Copyright title={post.data.title} pubDatetime={post.data.pubDatetime} updatedDatetime={post.data.modDatetime} slug={post.slug} />
+            {showDonation && <Donation />}
           </div>
         </article>
         
-        {/* 前后文章导航 */}
         <nav class="post-nav">
           {prevPost && (
             <a href={`/blog/${prevPost.slug}/`} class="post-nav-item post-nav-prev">
-              <span class="nav-label">
-                <i class="fas fa-arrow-left"></i>
-                上一篇
-              </span>
+              <span class="nav-label"><i class="fas fa-arrow-left"></i> 上一篇</span>
               <span class="nav-title">{prevPost.data.title}</span>
             </a>
           )}
           {nextPost && (
             <a href={`/blog/${nextPost.slug}/`} class="post-nav-item post-nav-next">
-              <span class="nav-label">
-                下一篇
-                <i class="fas fa-arrow-right"></i>
-              </span>
+              <span class="nav-label">下一篇 <i class="fas fa-arrow-right"></i></span>
               <span class="nav-title">{nextPost.data.title}</span>
             </a>
           )}
         </nav>
         
-        {/* 评论区 */}
-        <Comments />
+        {showComment && <Comments />}
       </div>
       
-      {/* 右侧边栏 - 空，保持两栏布局 */}
-      <div class="column is-2 sidebar-right">
-        {/* 右侧可以添加广告或其他内容 */}
-      </div>
+      {/* 右侧边栏 */}
+      {layout === 'three-column' && <div class={`column ${rightColumnClass} sidebar-right`}></div>}
     </div>
   </div>
 </BaseLayout>
 
 <style>
-  .container {
-    padding: 2rem 1rem;
-    max-width: 1400px;
-  }
+  .container { padding: 2rem 1rem; max-width: 1400px; }
   
-  .sidebar-sticky {
-    position: sticky;
-    top: 5rem;
-  }
-  
-  .sidebar-sticky > * {
-    margin-bottom: 2rem;
-  }
-  
-  .article-page {
-    margin-bottom: 2rem;
-    overflow: hidden;
-  }
+  .article-page { margin-bottom: 2rem; overflow: hidden; }
   
   .article-hero {
     width: 100%;
@@ -180,11 +148,7 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
     overflow: hidden;
   }
   
-  .article-hero img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  .article-hero img { width: 100%; height: 100%; object-fit: cover; }
   
   .article-header {
     text-align: center;
@@ -211,19 +175,9 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
     color: var(--text-light);
   }
   
-  .meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-  
-  .meta-item a {
-    color: inherit;
-  }
-  
-  .meta-item a:hover {
-    color: var(--primary);
-  }
+  .meta-item { display: inline-flex; align-items: center; gap: 0.375rem; }
+  .meta-item a { color: inherit; }
+  .meta-item a:hover { color: var(--primary); }
   
   .article-tags {
     display: flex;
@@ -239,10 +193,7 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
     padding: 0.375rem 0.875rem;
   }
   
-  .article-tags .tag:hover {
-    background: var(--primary);
-    color: #fff;
-  }
+  .article-tags .tag:hover { background: var(--primary); color: #fff; }
   
   .article-body {
     font-size: 1.125rem;
@@ -266,70 +217,9 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
     font-size: 1.5rem;
   }
   
-  .article-body :global(p) {
-    margin-bottom: 1.5rem;
-  }
-  
-  .article-body :global(pre) {
-    margin: 1.5rem 0;
-    border-radius: var(--radius-lg);
-    overflow-x: auto;
-  }
-  
-  .article-body :global(code) {
-    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
-    font-size: 0.9em;
-  }
-  
-  .article-body :global(:not(pre) > code) {
-    background: var(--tag-bg);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    color: var(--text-strong);
-  }
-  
-  /* 代码块主题自适应 */
-  [data-theme="light"] .article-body :global(pre) {
-    background: #f6f8fa;
-  }
-  
-  [data-theme="dark"] .article-body :global(pre) {
-    background: #0d1117;
-  }
-  
-  .article-body :global(blockquote) {
-    border-left: 4px solid var(--primary);
-    padding: 1rem 1.5rem;
-    margin: 1.5rem 0;
-    background: var(--tag-bg);
-    border-radius: 0 var(--radius) var(--radius) 0;
-    color: var(--text-light);
-    font-style: italic;
-  }
-  
-  .article-body :global(img) {
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--radius-lg);
-    margin: 1.5rem 0;
-  }
-  
-  .article-body :global(table) {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1.5rem 0;
-  }
-  
-  .article-body :global(th),
-  .article-body :global(td) {
-    padding: 0.875rem;
-    border: 1px solid var(--border);
-  }
-  
-  .article-body :global(th) {
-    background: var(--tag-bg);
-    font-weight: 600;
-  }
+  .article-body :global(p) { margin-bottom: 1.5rem; }
+  .article-body :global(pre) { margin: 1.5rem 0; border-radius: var(--radius-lg); }
+  .article-body :global(img) { max-width: 100%; height: auto; border-radius: var(--radius-lg); margin: 1.5rem 0; }
   
   .post-nav {
     display: flex;
@@ -351,16 +241,8 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
     flex-direction: column;
   }
   
-  .post-nav-next {
-    text-align: right;
-    align-items: flex-end;
-  }
-  
-  .post-nav-item:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
-  }
+  .post-nav-next { text-align: right; align-items: flex-end; }
+  .post-nav-item:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
   
   .nav-label {
     font-size: 0.85rem;
@@ -381,53 +263,33 @@ const nextPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
     overflow: hidden;
   }
   
-  .post-nav-item:hover .nav-title {
-    color: var(--primary);
+  .post-nav-item:hover .nav-title { color: var(--primary); }
+  
+  .sticky-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: var(--primary);
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    vertical-align: middle;
   }
   
   @media (max-width: 1024px) {
-    .sidebar-left {
-      display: none;
-    }
-    
-    .main-content {
-      width: 80%;
-    }
-    
-    .sidebar-right {
-      width: 20%;
-    }
+    .sidebar-left { display: none; }
+    .main-content { width: 100%; }
+    .sidebar-right { display: none; }
   }
   
   @media (max-width: 768px) {
-    .container {
-      padding: 1rem;
-    }
-    
-    .main-content,
-    .sidebar-right {
-      width: 100%;
-    }
-    
-    .sidebar-right {
-      display: none;
-    }
-    
-    .article-title {
-      font-size: 1.75rem;
-    }
-    
-    .article-body {
-      font-size: 1rem;
-    }
-    
-    .post-nav {
-      flex-direction: column;
-    }
-    
-    .post-nav-next {
-      text-align: left;
-      align-items: flex-start;
-    }
+    .container { padding: 1rem; }
+    .article-title { font-size: 1.75rem; }
+    .article-body { font-size: 1rem; }
+    .post-nav { flex-direction: column; }
+    .post-nav-next { text-align: left; align-items: flex-start; }
   }
 </style>

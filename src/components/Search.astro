@@ -1,0 +1,255 @@
+---
+import { SEARCH_CONFIG } from '../config';
+
+interface Props {
+  placeholder?: string;
+}
+
+const { placeholder = '搜索文章...' } = Astro.props;
+const { provider } = SEARCH_CONFIG;
+---
+
+<div class="search-container" data-provider={provider}>
+  <div class="search-input-wrapper">
+    <i class="fas fa-search search-icon"></i>
+    <input 
+      type="text" 
+      class="search-input"
+      placeholder={placeholder}
+      autocomplete="off"
+      aria-label="搜索"
+    />
+    <kbd class="search-shortcut">Ctrl K</kbd>
+  </div>
+  
+  <div class="search-results"></div>
+</div>
+
+{/* Insight 搜索 - 默认 */}
+{provider === 'insight' && (
+  <script is:inline>
+    (async function() {
+      let searchData = [];
+      
+      // 加载搜索数据
+      async function loadSearchData() {
+        try {
+          const response = await fetch('/search.json');
+          searchData = await response.json();
+        } catch (error) {
+          console.error('Failed to load search data:', error);
+        }
+      }
+      
+      await loadSearchData();
+      
+      const searchInput = document.querySelector('.search-input');
+      const resultsContainer = document.querySelector('.search-results');
+      const shortcut = document.querySelector('.search-shortcut');
+      
+      // 搜索功能
+      function performSearch(query) {
+        if (!query.trim() || !searchData.length) {
+          resultsContainer.innerHTML = '';
+          return;
+        }
+        
+        const lowerQuery = query.toLowerCase();
+        const results = searchData.filter(item => {
+          return item.title?.toLowerCase().includes(lowerQuery) ||
+                 item.content?.toLowerCase().includes(lowerQuery) ||
+                 item.tags?.some(tag => tag.toLowerCase().includes(lowerQuery));
+        }).slice(0, 10);
+        
+        if (results.length === 0) {
+          resultsContainer.innerHTML = '<div class="search-no-results">没有找到相关文章</div>';
+          return;
+        }
+        
+        resultsContainer.innerHTML = results.map(item => `
+          <a href="${item.url}" class="search-result-item">
+            <div class="search-result-title">${item.title}</div>
+            <div class="search-result-excerpt">${item.excerpt || item.content?.substring(0, 150) + '...' || ''}</div>
+          </a>
+        `).join('');
+      }
+      
+      searchInput?.addEventListener('input', (e) => {
+        performSearch(e.target.value);
+      });
+      
+      // 快捷键
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          searchInput?.focus();
+        }
+      });
+      
+      // 聚焦时隐藏快捷键提示
+      searchInput?.addEventListener('focus', () => {
+        shortcut?.classList.add('is-hidden');
+      });
+      
+      searchInput?.addEventListener('blur', () => {
+        shortcut?.classList.remove('is-hidden');
+      });
+    })();
+  </script>
+)}
+
+{/* Fuse.js 搜索 */}
+{provider === 'fuse' && (
+  <script is:inline define:vars={{ config: SEARCH_CONFIG.fuse }}>
+    (async function() {
+      let fuse = null;
+      let searchData = [];
+      
+      async function loadSearchData() {
+        try {
+          const response = await fetch('/search.json');
+          searchData = await response.json();
+          const Fuse = (await import('https://cdn.jsdelivr.net/npm/fuse.js@7/dist/fuse.min.js')).default;
+          fuse = new Fuse(searchData, {
+            keys: config.keys || ['title', 'content'],
+            threshold: config.threshold || 0.3,
+            distance: config.distance || 100,
+          });
+        } catch (error) {
+          console.error('Failed to load search data:', error);
+        }
+      }
+      
+      await loadSearchData();
+      
+      const searchInput = document.querySelector('.search-input');
+      const resultsContainer = document.querySelector('.search-results');
+      
+      searchInput?.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        if (!query || !fuse) {
+          resultsContainer.innerHTML = '';
+          return;
+        }
+        
+        const results = fuse.search(query).slice(0, 10);
+        
+        if (results.length === 0) {
+          resultsContainer.innerHTML = '<div class="search-no-results">没有找到相关文章</div>';
+          return;
+        }
+        
+        resultsContainer.innerHTML = results.map(result => `
+          <a href="${result.item.url}" class="search-result-item">
+            <div class="search-result-title">${result.item.title}</div>
+            <div class="search-result-excerpt">${result.item.excerpt || ''}</div>
+          </a>
+        `).join('');
+      });
+    })();
+  </script>
+)}
+
+<style>
+  .search-container { position: relative; width: 100%; }
+  
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-light);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    font-size: 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card-bg);
+    color: var(--text);
+    transition: all 0.2s ease;
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+  
+  .search-shortcut {
+    position: absolute;
+    right: 1rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: monospace;
+    transition: opacity 0.2s ease;
+  }
+  
+  .search-shortcut.is-hidden { opacity: 0; }
+  
+  .search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-hover);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  
+  .search-result-item {
+    display: block;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text);
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+  
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--hover-bg); }
+  
+  .search-result-title {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+  }
+  
+  .search-result-excerpt {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .search-no-results {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-light);
+  }
+  
+  @media (max-width: 768px) {
+    .search-shortcut { display: none; }
+  }
+</style>

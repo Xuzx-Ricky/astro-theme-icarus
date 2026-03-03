@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://astro-icarus.pages.dev/sitemap-index.xml

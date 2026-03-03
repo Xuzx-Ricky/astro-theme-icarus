@@ -4,12 +4,18 @@ import type { CollectionEntry } from 'astro:content';
 // 获取所有文章
 export async function getAllPosts(): Promise<CollectionEntry<'blog'>[]> {
   const posts = await getCollection('blog', ({ data }) => {
+    // 过滤掉草稿和隐藏的文章
+    if (data.hidden) return false;
     return import.meta.env.DEV || !data.draft;
   });
   
-  return posts.sort((a, b) => 
-    b.data.pubDatetime.valueOf() - a.data.pubDatetime.valueOf()
-  );
+  return posts.sort((a, b) => {
+    // 置顶文章排在前面
+    if (a.data.sticky && !b.data.sticky) return -1;
+    if (!a.data.sticky && b.data.sticky) return 1;
+    // 然后按日期排序
+    return b.data.pubDatetime.valueOf() - a.data.pubDatetime.valueOf();
+  });
 }
 
 // 获取文章字数

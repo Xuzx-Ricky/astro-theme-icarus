@@ -31,7 +31,7 @@ const { provider } = COMMENT_CONFIG;
           data-reactions-enabled={COMMENT_CONFIG.giscus.reactionsEnabled ? '1' : '0'}
           data-emit-metadata={COMMENT_CONFIG.giscus.emitMetadata ? '1' : '0'}
           data-input-position={COMMENT_CONFIG.giscus.inputPosition}
-          data-theme={COMMENT_CONFIG.giscus.theme || 'preferred_color_scheme'}
+          data-theme="preferred_color_scheme"
           data-lang={COMMENT_CONFIG.giscus.lang}
           data-loading="lazy"
           crossorigin="anonymous"
@@ -197,6 +197,87 @@ const { provider } = COMMENT_CONFIG;
     )}
   </div>
 </div>
+
+{/* 评论主题同步脚本 - 支持所有评论系统 */}
+<script is:inline>
+  (function() {
+    // 获取当前主题
+    function getCurrentTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) return savedTheme;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    
+    // Giscus 主题切换
+    function updateGiscusTheme(theme) {
+      const iframe = document.querySelector('iframe.giscus-frame');
+      if (iframe) {
+        iframe.contentWindow.postMessage(
+          { giscus: { setConfig: { theme: theme === 'dark' ? 'dark' : 'light' } } },
+          'https://giscus.app'
+        );
+      }
+    }
+    
+    // Utterances 主题切换
+    function updateUtterancesTheme(theme) {
+      const iframe = document.querySelector('iframe.utterances-frame');
+      if (iframe) {
+        const utterancesTheme = theme === 'dark' ? 'github-dark' : 'github-light';
+        iframe.contentWindow.postMessage(
+          { type: 'set-theme', theme: utterancesTheme },
+          'https://utteranc.es'
+        );
+      }
+    }
+    
+    // Gitalk 主题切换（通过CSS变量）
+ function updateGitalkTheme(theme) {
+      const gitalkContainer = document.querySelector('.gitalk-container');
+      if (gitalkContainer) {
+        gitalkContainer.setAttribute('data-theme', theme);
+      }
+    }
+    
+    // 更新所有评论系统主题
+    function updateAllCommentThemes(theme) {
+      updateGiscusTheme(theme);
+      updateUtterancesTheme(theme);
+      updateGitalkTheme(theme);
+      // Waline, Valine, Twikoo 等使用CSS变量自动适配
+    }
+    
+    // 监听 storage 变化（跨页面同步）
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'theme') {
+        updateAllCommentThemes(e.newValue);
+      }
+    });
+    
+    // 监听自定义主题切换事件
+    document.addEventListener('themeChanged', function(e) {
+      const theme = e.detail?.theme || getCurrentTheme();
+      updateAllCommentThemes(theme);
+    });
+    
+    // 定期检查并同步主题（iframe 加载可能有延迟）
+    let checkCount = 0;
+    const maxChecks = 50;
+    const checkInterval = setInterval(function() {
+      const theme = getCurrentTheme();
+      updateAllCommentThemes(theme);
+      if (++checkCount >= maxChecks) {
+        clearInterval(checkInterval);
+      }
+    }, 500);
+    
+    // 页面加载完成后立即同步一次
+    document.addEventListener('DOMContentLoaded', function() {
+      const theme = getCurrentTheme();
+      updateAllCommentThemes(theme);
+    });
+  })();
+</script>
 
 <style>
   .comments-section {

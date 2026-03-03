@@ -1,5 +1,5 @@
 ---
-import { SITE, AUTHOR, FOOTER_CONFIG, ANALYTICS_CONFIG } from '../config';
+import { SITE, AUTHOR, FOOTER_CONFIG, ANALYTICS_CONFIG, ICP_CONFIG } from '../config';
 
 const currentYear = new Date().getFullYear();
 const siteYear = SITE.startYear || currentYear;
@@ -37,6 +37,35 @@ const hasLinks = Object.keys(FOOTER_CONFIG.links).length > 0;
         
         {FOOTER_CONFIG.copyright && (
           <p class="footer-custom" set:html={FOOTER_CONFIG.copyright} />
+        )}
+        
+        {/* 备案信息 */}
+        {ICP_CONFIG.enabled && (
+          <p class="footer-icp">
+            <a 
+              href={ICP_CONFIG.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="icp-link"
+            >
+              <i class="fas fa-shield-alt"></i>
+              {ICP_CONFIG.number}
+            </a>
+            {ICP_CONFIG.police.enabled && (
+              <>
+                <span class="icp-separator">|</span>
+                <a 
+                  href={ICP_CONFIG.police.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="icp-link"
+                >
+                  <i class="fas fa-shield-alt"></i>
+                  {ICP_CONFIG.police.number}
+                </a>
+              </>
+            )}
+          </p>
         )}
         
         {/* 统计信息 - 带错误处理 */}
@@ -250,6 +279,37 @@ const hasLinks = Object.keys(FOOTER_CONFIG.links).length > 0;
   
   [data-theme="dark"] .footer-link:hover {
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+  }
+  
+  .footer-icp {
+    font-size: 0.85rem;
+    color: var(--text-lighter);
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  
+  .icp-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--text-light);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .icp-link:hover {
+    color: var(--primary);
+  }
+  
+  .icp-link i {
+    font-size: 0.8rem;
+  }
+  
+  .icp-separator {
+    color: var(--border);
   }
   
   @media (max-width: 768px) {

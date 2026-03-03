@@ -1,0 +1,145 @@
+---
+import { COUNTDOWN_CONFIG } from '../config';
+
+const { enabled, timers } = COUNTDOWN_CONFIG;
+---
+
+{enabled && timers.length > 0 && (
+  <div class="card countdown-widget">
+    <div class="card-header">
+      <p class="card-header-title">
+        <i class="fas fa-hourglass-half mr-2"></i>
+        倒计时
+      </p>
+    </div>
+    <div class="card-content">
+      <div class="countdown-list">
+        {timers.map(timer => (
+          <div class="countdown-item" data-target={timer.targetDate} data-id={timer.id}>
+            <div class="countdown-header">
+              <i class={`fas ${timer.icon}`}></i>
+              <span class="countdown-title">{timer.title}</span>
+            </div>
+            <div class="countdown-display">
+              <div class="countdown-unit">
+                <span class="countdown-value" data-unit="days">--</span>
+                <span class="countdown-label">天</span>
+              </div>
+              <div class="countdown-unit">
+                <span class="countdown-value" data-unit="hours">--</span>
+                <span class="countdown-label">时</span>
+              </div>
+              <div class="countdown-unit">
+                <span class="countdown-value" data-unit="minutes">--</span>
+                <span class="countdown-label">分</span>
+              </div>
+              <div class="countdown-unit">
+                <span class="countdown-value" data-unit="seconds">--</span>
+                <span class="countdown-label">秒</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+<script>
+  (function() {
+    function updateCountdown(element) {
+      const targetDate = new Date(element.dataset.target);
+      const now = new Date();
+      const diff = targetDate - now;
+      
+      if (diff <= 0) {
+        element.querySelectorAll('.countdown-value').forEach(el => el.textContent = '00');
+        return;
+      }
+      
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      element.querySelector('[data-unit="days"]').textContent = String(days).padStart(2, '0');
+      element.querySelector('[data-unit="hours"]').textContent = String(hours).padStart(2, '0');
+      element.querySelector('[data-unit="minutes"]').textContent = String(minutes).padStart(2, '0');
+      element.querySelector('[data-unit="seconds"]').textContent = String(seconds).padStart(2, '0');
+    }
+    
+    const countdownItems = document.querySelectorAll('.countdown-item');
+    
+    function updateAll() {
+      countdownItems.forEach(updateCountdown);
+    }
+    
+    updateAll();
+    setInterval(updateAll, 1000);
+  })();
+</script>
+
+<style>
+  .countdown-widget { margin-bottom: 2rem; }
+  
+  .countdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .countdown-item {
+    padding: 1rem;
+    background: var(--tag-bg);
+    border-radius: var(--radius);
+  }
+  
+  .countdown-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+  }
+  
+  .countdown-header i {
+    color: var(--primary);
+  }
+  
+  .countdown-title {
+    font-weight: 500;
+  }
+  
+  .countdown-display {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 3rem;
+  }
+  
+  .countdown-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: monospace;
+    line-height: 1;
+  }
+  
+  .countdown-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+  }
+  
+  @media (max-width: 768px) {
+    .countdown-value { font-size: 1.25rem; }
+    .countdown-unit { min-width: 2.5rem; }
+  }
+</style>

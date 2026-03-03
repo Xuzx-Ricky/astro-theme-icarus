@@ -1,0 +1,224 @@
+---
+import { Image } from 'astro:assets';
+import { LAZY_LOAD_CONFIG } from '../config';
+
+interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+  format?: 'webp' | 'avif' | 'jpeg' | 'png';
+  quality?: number;
+  placeholder?: 'blur' | 'dominantColor' | 'none';
+}
+
+const {
+  src,
+  alt,
+  width = 800,
+  height = 600,
+  class: className = '',
+  loading = 'lazy',
+  decoding = 'async',
+  format = 'webp',
+  quality = 80,
+  placeholder = 'blur',
+} = Astro.props;
+
+const { enabled: lazyEnabled, allowClickBeforeLoad } = LAZY_LOAD_CONFIG;
+---
+
+<div class={`optimized-image-wrapper ${className}`} data-allow-click={allowClickBeforeLoad}>
+  {src.startsWith('http') ? (
+    // 远程图片使用普通 img 标签
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={lazyEnabled ? loading : 'eager'}
+      decoding={decoding}
+      class="optimized-image"
+      data-src={src}
+    />
+  ) : (
+    // 本地图片使用 Astro Image 组件
+    <Image
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={lazyEnabled ? loading : 'eager'}
+      decoding={decoding}
+      format={format}
+      quality={quality}
+      class="optimized-image"
+    />
+  )}
+  
+  {/* 加载占位符 */}
+  <div class="image-placeholder">
+    <div class="placeholder-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+  </div>
+  
+  {/* 点击遮罩 - 允许在图片加载前点击 */}
+  {allowClickBeforeLoad && (
+    <a href={src} class="image-click-overlay" target="_blank" rel="noopener noreferrer" aria-label="查看原图">
+      <span class="view-original">
+        <i class="fas fa-external-link-alt"></i>
+      </span>
+    </a>
+  )}
+</div>
+
+<script>
+  (function() {
+    const imageWrappers = document.querySelectorAll('.optimized-image-wrapper');
+    
+    imageWrappers.forEach(wrapper => {
+      const img = wrapper.querySelector('.optimized-image') as HTMLImageElement;
+      const placeholder = wrapper.querySelector('.image-placeholder');
+      
+      if (!img) return;
+      
+      // 图片加载完成
+      img.addEventListener('load', () => {
+        wrapper.classList.add('loaded');
+        if (placeholder) placeholder.remove();
+      });
+      
+      // 如果图片已经缓存，立即触发 load 事件
+      if (img.complete) {
+        wrapper.classList.add('loaded');
+        if (placeholder) placeholder.remove();
+      }
+      
+      // 图片加载错误
+      img.addEventListener('error', () => {
+        wrapper.classList.add('error');
+        if (placeholder) {
+          placeholder.innerHTML = '<i class="fas fa-image"></i><span>加载失败</span>';
+        }
+      });
+    });
+  })();
+</script>
+
+<style>
+  .optimized-image-wrapper {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--tag-bg);
+    line-height: 0; /* 消除底部间隙 */
+  }
+  
+  .optimized-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: opacity 0.3s ease;
+    min-height: 100px; /* 最小高度防止布局抖动 */
+  }
+  
+  .optimized-image-wrapper:not(.loaded) .optimized-image {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  .optimized-image-wrapper.loaded .optimized-image {
+    opacity: 1;
+    position: relative;
+  }
+  
+  .image-placeholder {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tag-bg);
+    color: var(--text-light);
+    font-size: 1.5rem;
+    transition: opacity 0.3s ease;
+    min-height: 100px;
+  }
+  
+  .optimized-image-wrapper.loaded .image-placeholder {
+    display: none;
+  }
+  
+  .placeholder-spinner {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  
+  /* 点击遮罩 */
+  .image-click-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.3s ease;
+    text-decoration: none;
+    opacity: 0;
+    z-index: 10;
+  }
+  
+  .optimized-image-wrapper:hover .image-click-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 1;
+  }
+  
+  .view-original {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--card-bg);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .image-click-overlay:hover .view-original {
+    transform: scale(1);
+  }
+  
+  /* 错误状态 */
+  .optimized-image-wrapper.error .image-placeholder {
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 1rem;
+  }
+  
+  /* 暗色模式 */
+  [data-theme="dark"] .image-placeholder {
+    background: var(--hover-bg);
+  }
+  
+  [data-theme="dark"] .view-original {
+    background: var(--card-bg);
+    color: var(--text-strong);
+  }
+</style>

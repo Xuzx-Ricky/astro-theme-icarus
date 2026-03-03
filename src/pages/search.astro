@@ -62,21 +62,22 @@ import Categories from '../components/Categories.astro';
 </BaseLayout>
 
 <script>
-  let pagefind: any = null;
-  let pagefindLoaded = false;
+  // Insight 搜索 - 使用本地 search.json
+  let searchData: any[] = [];
+  let searchDataLoaded = false;
   
-  async function loadPagefind() {
-    if (pagefindLoaded) return;
+  async function loadSearchData() {
+    if (searchDataLoaded) return;
     try {
-      // @ts-ignore
-      pagefind = await import('/pagefind/pagefind.js');
-      pagefindLoaded = true;
+      const response = await fetch('/search.json');
+      searchData = await response.json();
+      searchDataLoaded = true;
     } catch (e) {
-      console.log('Pagefind not available');
+      console.log('Search data not available');
     }
   }
   
-  async function performSearch(query: string) {
+  function performSearch(query: string) {
     const searchStats = document.getElementById('search-stats');
     const searchResults = document.getElementById('search-results');
     
@@ -86,49 +87,43 @@ import Categories from '../components/Categories.astro';
       return;
     }
     
-    if (!pagefindLoaded) {
-      if (searchResults) searchResults.innerHTML = '<div class="search-loading">正在加载搜索...</div>';
-      await loadPagefind();
-    }
-    
-    if (!pagefind) {
-      if (searchResults) searchResults.innerHTML = '<div class="search-loading">搜索服务暂不可用</div>';
+    if (!searchDataLoaded) {
+      if (searchResults) searchResults.innerHTML = '<div class="search-loading">正在加载搜索数据...</div>';
+      loadSearchData().then(() => performSearch(query));
       return;
     }
     
-    try {
-      const search = await pagefind.search(query);
-      
-      if (searchStats) {
-        searchStats.innerHTML = `找到 <strong>${search.results.length}</strong> 个结果`;
-      }
-      
-      if (search.results.length === 0) {
-        if (searchResults) {
-          searchResults.innerHTML = `
-            <div class="search-empty">
-              <i class="fas fa-inbox"></i>
-              <p>没有找到相关文章</p>
-            </div>
-          `;
-        }
-        return;
-      }
-      
-      const results = await Promise.all(
-        search.results.slice(0, 10).map((r: any) => r.data())
-      );
-      
+    const lowerQuery = query.toLowerCase();
+    const results = searchData.filter(item => 
+      item.title?.toLowerCase().includes(lowerQuery) ||
+      item.content?.toLowerCase().includes(lowerQuery) ||
+      item.tags?.some((tag: string) => tag.toLowerCase().includes(lowerQuery)) ||
+      item.category?.toLowerCase().includes(lowerQuery)
+    ).slice(0, 10);
+    
+    if (searchStats) {
+      searchStats.innerHTML = `找到 <strong>${results.length}</strong> 个结果`;
+    }
+    
+    if (results.length === 0) {
       if (searchResults) {
-        searchResults.innerHTML = results.map((result: any) => `
-          <a href="${result.url}" class="search-result-item">
-            <div class="result-title">${result.meta.title}</div>
-            <div class="result-excerpt">${result.excerpt}</div>
-          </a>
-        `).join('');
+        searchResults.innerHTML = `
+          <div class="search-empty">
+            <i class="fas fa-inbox"></i>
+            <p>没有找到相关文章</p>
+          </div>
+        `;
       }
-    } catch (err) {
-      console.error('Search error:', err);
+      return;
+    }
+    
+    if (searchResults) {
+      searchResults.innerHTML = results.map((result: any) => `
+        <a href="${result.url}" class="search-result-item">
+          <div class="result-title">${result.title}</div>
+          <div class="result-excerpt">${result.excerpt || result.content?.substring(0, 150) + '...' || ''}</div>
+        </a>
+      `).join('');
     }
   }
   
@@ -137,8 +132,8 @@ import Categories from '../components/Categories.astro';
     const searchInput = document.getElementById('search-input') as HTMLInputElement;
     const searchBtn = document.getElementById('search-btn');
     
-    // 延迟加载 pagefind
-    setTimeout(loadPagefind, 1000);
+    // 延迟加载搜索数据
+    setTimeout(loadSearchData, 100);
     
     searchInput?.addEventListener('input', (e) => {
       const query = (e.target as HTMLInputElement).value;

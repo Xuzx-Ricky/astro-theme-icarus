@@ -1,5 +1,5 @@
 ---
-import { SITE, NAV_LINKS } from '../config';
+import { SITE, NAV_LINKS, SEARCH_CONFIG } from '../config';
 
 interface Props {
   hideSearch?: boolean;
@@ -7,8 +7,6 @@ interface Props {
 
 const { hideSearch = false } = Astro.props;
 const currentPath = Astro.url.pathname;
-
-// 页眉文字配置
 const headerTitle = SITE.logo ? '' : (SITE.subtitle || SITE.title);
 const headerLogo = SITE.logo;
 ---
@@ -17,9 +15,7 @@ const headerLogo = SITE.logo;
   <div class="container">
     <div class="navbar-brand">
       <a class="navbar-item logo" href="/">
-        {headerLogo && (
-          <img src={headerLogo} alt={SITE.title} class="logo-img" />
-        )}
+        {headerLogo && <img src={headerLogo} alt="" class="logo-img" />}
         <span class="logo-text">{headerTitle || SITE.title}</span>
       </a>
       
@@ -37,21 +33,23 @@ const headerLogo = SITE.logo;
             href={link.href} 
             class={`navbar-item ${currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href)) ? 'is-active' : ''}`}
           >
-            <span class="nav-icon">
-              <i class={`fas ${link.icon}`}></i>
-            </span>
-            <span class="nav-label">{link.label}</span>
+            <i class={`fas ${link.icon}`}></i>
+            <span>{link.label}</span>
           </a>
         ))}
       </div>
       
       <div class="navbar-end">
-        {/* RSS订阅 */}
+        {SEARCH_CONFIG.enabled && !hideSearch && (
+          <button class="navbar-item nav-action" id="searchTrigger" aria-label="搜索" title="搜索 (Ctrl+K)">
+            <i class="fas fa-search"></i>
+          </button>
+        )}
+        
         <a href="/rss.xml" class="navbar-item nav-action" aria-label="RSS订阅" title="RSS订阅">
           <i class="fas fa-rss"></i>
         </a>
         
-        {/* 主题切换 */}
         <button class="navbar-item nav-action" id="themeToggle" aria-label="切换主题" title="切换主题">
           <i class="fas fa-sun light-icon"></i>
           <i class="fas fa-moon dark-icon"></i>
@@ -61,34 +59,48 @@ const headerLogo = SITE.logo;
   </div>
 </nav>
 
+{/* 搜索模态框 */}
+{SEARCH_CONFIG.enabled && !hideSearch && (
+  <div class="search-modal" id="searchModal">
+    <div class="search-modal-content">
+      <div class="search-modal-header">
+        <div class="search-input-wrapper">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="searchInput" class="search-input" placeholder="搜索文章..." autocomplete="off" />
+        </div>
+        <button class="search-close" id="searchClose" aria-label="关闭">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="search-modal-body">
+        <div id="searchResults" class="search-results"></div>
+      </div>
+      <div class="search-modal-footer">
+        <span><kbd>ESC</kbd> 关闭 <kbd>Ctrl+K</kbd> 打开</span>
+      </div>
+    </div>
+  </div>
+)}
+
 <script>
   // 移动端菜单
   const navbarBurger = document.querySelector('.navbar-burger');
   const navbarMenu = document.getElementById('navbarMenu');
-  
-  if (navbarBurger && navbarMenu) {
-    navbarBurger.addEventListener('click', () => {
-      navbarBurger.classList.toggle('is-active');
-      navbarMenu.classList.toggle('is-active');
-    });
-  }
-  
+  navbarBurger?.addEventListener('click', () => {
+    navbarBurger.classList.toggle('is-active');
+    navbarMenu?.classList.toggle('is-active');
+  });
+
   // 主题切换
   const themeToggle = document.getElementById('themeToggle');
   const html = document.documentElement;
   
-  function updateThemeIcon(theme: string) {
+  function updateThemeIcon(theme) {
     const lightIcon = themeToggle?.querySelector('.light-icon');
     const darkIcon = themeToggle?.querySelector('.dark-icon');
-    
     if (lightIcon && darkIcon) {
-      if (theme === 'dark') {
-        lightIcon.classList.add('is-hidden');
-        darkIcon.classList.remove('is-hidden');
-      } else {
-        lightIcon.classList.remove('is-hidden');
-        darkIcon.classList.add('is-hidden');
-      }
+      lightIcon.classList.toggle('is-hidden', theme === 'dark');
+      darkIcon.classList.toggle('is-hidden', theme !== 'dark');
     }
   }
   
@@ -97,16 +109,93 @@ const headerLogo = SITE.logo;
   themeToggle?.addEventListener('click', () => {
     const currentTheme = html.getAttribute('data-theme') || 'light';
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    
     html.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeIcon(newTheme);
+    
+    // 触发自定义事件，通知其他组件主题已切换
+    document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+  });
+
+  // 搜索功能
+  const searchTrigger = document.getElementById('searchTrigger');
+  const searchModal = document.getElementById('searchModal');
+  const searchInput = document.getElementById('searchInput');
+  const searchClose = document.getElementById('searchClose');
+  const searchResults = document.getElementById('searchResults');
+  
+  let searchData = [];
+  
+  async function loadSearchData() {
+    try {
+      const response = await fetch('/search.json');
+      searchData = await response.json();
+    } catch (error) {
+      console.error('Search data load failed:', error);
+    }
+  }
+  
+  function performSearch(query) {
+    if (!query.trim() || !searchData.length) {
+      searchResults.innerHTML = '';
+      return;
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    const results = searchData.filter(item => 
+      item.title?.toLowerCase().includes(lowerQuery) ||
+      item.content?.toLowerCase().includes(lowerQuery)
+    ).slice(0, 8);
+    
+    if (!results.length) {
+      searchResults.innerHTML = '<div class="search-empty"><i class="fas fa-inbox"></i><p>没有找到相关文章</p></div>';
+      return;
+    }
+    
+    searchResults.innerHTML = results.map(item => `
+      <a href="${item.url}" class="search-result-item">
+        <div class="result-title">${item.title}</div>
+        <div class="result-excerpt">${item.excerpt || item.content?.substring(0, 120) + '...' || ''}</div>
+      </a>
+    `).join('');
+  }
+  
+  function openSearch() {
+    searchModal?.classList.add('is-active');
+    document.body.style.overflow = 'hidden';
+    loadSearchData();
+    setTimeout(() => searchInput?.focus(), 100);
+  }
+  
+  function closeSearch() {
+    searchModal?.classList.remove('is-active');
+    document.body.style.overflow = '';
+    if (searchInput) searchInput.value = '';
+    searchResults.innerHTML = '';
+  }
+  
+  searchTrigger?.addEventListener('click', openSearch);
+  searchClose?.addEventListener('click', closeSearch);
+  searchModal?.addEventListener('click', (e) => { if (e.target === searchModal) closeSearch(); });
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && searchModal?.classList.contains('is-active')) closeSearch();
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      searchModal?.classList.contains('is-active') ? closeSearch() : openSearch();
+    }
+  });
+  
+  let searchTimeout;
+  searchInput?.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => performSearch(e.target.value), 200);
   });
 </script>
 
 <style>
   .navbar {
-    background: var(--navbar-bg);
+    background: rgba(var(--navbar-bg-rgb), 0.85);
     border-bottom: 1px solid var(--border);
     box-shadow: var(--shadow);
     backdrop-filter: blur(10px);
@@ -123,10 +212,7 @@ const headerLogo = SITE.logo;
     font-size: 1.25rem;
   }
   
-  .logo-img {
-    height: 32px;
-    width: auto;
-  }
+  .logo-img { height: 32px; width: auto; }
   
   .navbar-item {
     color: var(--text);
@@ -137,17 +223,10 @@ const headerLogo = SITE.logo;
     gap: 0.5rem;
   }
   
-  .nav-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .navbar-item i {
     width: 1.25rem;
-    height: 1.25rem;
+    text-align: center;
     font-size: 0.875rem;
-  }
-  
-  .nav-label {
-    line-height: 1;
   }
   
   .navbar-item.is-active {
@@ -165,15 +244,15 @@ const headerLogo = SITE.logo;
     border: none;
     cursor: pointer;
     color: var(--text);
-    font-size: 1.125rem;
+    font-size: 1rem;
     padding: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
+    transition: all 0.2s ease;
   }
   
   .nav-action:hover {
@@ -181,38 +260,175 @@ const headerLogo = SITE.logo;
     background: var(--hover-bg);
   }
   
-  .light-icon, .dark-icon {
-    transition: all 0.3s ease;
-  }
+  .light-icon, .dark-icon { transition: all 0.3s ease; }
+  [data-theme="dark"] .light-icon { display: none; }
+  [data-theme="light"] .dark-icon { display: none; }
+  [data-theme="dark"] .dark-icon { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
   
-  [data-theme="dark"] .light-icon {
+  /* 搜索模态框 */
+  .search-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
     display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
   }
   
-  [data-theme="light"] .dark-icon {
-    display: none;
+  .search-modal.is-active { display: flex; }
+  
+  .search-modal-content {
+    width: 90%;
+    max-width: 700px;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
   }
   
-  [data-theme="dark"] .dark-icon {
-    color: var(--neon-cyan);
-    text-shadow: 0 0 10px var(--neon-cyan);
+  [data-theme="dark"] .search-modal-content { box-shadow: 0 0 40px rgba(0, 240, 255, 0.2); }
+  
+  .search-modal-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    gap: 0.75rem;
+  }
+  
+  .search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-light);
+    font-size: 1.125rem;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-strong);
+    font-size: 1.125rem;
+    outline: none;
+  }
+  
+  .search-input::placeholder { color: var(--text-lighter); }
+  
+  .search-close {
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .search-close:hover { background: var(--hover-bg); color: var(--text-strong); }
+  
+  .search-modal-body { flex: 1; overflow-y: auto; max-height: 50vh; padding: 0.5rem; }
+  
+  .search-result-item {
+    display: block;
+    padding: 1rem;
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .search-result-item:hover { background: var(--hover-bg); }
+  
+  .result-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-bottom: 0.375rem;
+    color: var(--primary);
+  }
+  
+  .result-excerpt {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .search-empty, .search-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-light);
+  }
+  
+  .search-empty i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+  
+  .search-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.75rem 1rem;
+    background: var(--tag-bg);
+    font-size: 0.8rem;
+    color: var(--text-light);
+    border-top: 1px solid var(--border);
+  }
+  
+  .search-modal-footer kbd {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.125rem 0.375rem;
+    font-family: monospace;
+    font-size: 0.75em;
   }
   
   @media (max-width: 768px) {
-    .navbar {
-      min-height: 3.5rem;
+    .navbar { min-height: 3.5rem; }
+    .logo-text { font-size: 1.1rem; }
+    /* 修复移动端导航菜单文字不显示问题 */
+    .navbar-menu.is-active .navbar-start .navbar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
     }
-    
-    .logo-text {
-      font-size: 1.1rem;
-    }
-    
-    .nav-label {
-      display: none;
-    }
-    
-    .nav-icon {
+    .navbar-menu.is-active .navbar-start .navbar-item span {
+      display: inline !important;
       font-size: 1rem;
     }
+    .navbar-menu.is-active .navbar-start .navbar-item i {
+      font-size: 1rem;
+      width: 1.5rem;
+    }
+    /* 修复移动端下拉菜单背景色 */
+    .navbar-menu.is-active {
+      background: var(--card-bg);
+      box-shadow: var(--shadow-hover);
+    }
+    [data-theme="dark"] .navbar-menu.is-active {
+      background: var(--card-bg);
+    }
+    .search-modal-content { width: 95%; max-height: 90vh; }
+    .search-modal-footer { display: none; }
   }
 </style>

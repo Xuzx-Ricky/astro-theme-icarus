@@ -3,50 +3,117 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ArticleCard from '../components/ArticleCard.astro';
 import ProfileWidget from '../components/ProfileWidget.astro';
 import Hitokoto from '../components/Hitokoto.astro';
+import SmartCalendar from '../components/SmartCalendar.astro';
 import RecentPosts from '../components/RecentPosts.astro';
 import Categories from '../components/Categories.astro';
 import Archives from '../components/Archives.astro';
 import Tags from '../components/Tags.astro';
 import FriendLinks from '../components/FriendLinks.astro';
 import { getAllPosts } from '../utils/helpers';
+import { PAGINATION_CONFIG } from '../config';
 
 const posts = await getAllPosts();
-const recentPosts = posts.slice(0, 10);
+
+// 分页
+const currentPage = Number(Astro.url.searchParams.get('page')) || 1;
+const perPage = PAGINATION_CONFIG.perPage;
+const totalPosts = posts.length;
+const totalPages = Math.ceil(totalPosts / perPage);
+const start = (currentPage - 1) * perPage;
+const end = start + perPage;
+const paginatedPosts = posts.slice(start, end);
+
+// 分页链接
+const getPageUrl = (page) => page === 1 ? '/' : `/?page=${page}`;
 ---
 
 <BaseLayout title="首页">
   <div class="container">
-    <div class="columns is-variable is-5">
+    <div class="columns is-variable is-4">
       {/* 左侧边栏 */}
       <div class="column is-3 sidebar-left">
         <div class="sidebar-content">
           <ProfileWidget />
           <Hitokoto />
+          <SmartCalendar />
         </div>
       </div>
       
       {/* 主内容区 */}
-      <div class="column is-6 main-content">
+      <div class="column is-7 main-content">
         <div class="posts-container">
-          {recentPosts.map(post => (
+          {paginatedPosts.map(post => (
             <ArticleCard post={post} />
           ))}
         </div>
         
-        {posts.length > 10 && (
-          <div class="load-more has-text-centered">
-            <a href="/archives/" class="button is-primary is-medium">
-              <span>查看更多文章</span>
-              <span class="icon">
-                <i class="fas fa-arrow-right"></i>
-              </span>
+        {/* 分页 */}
+        {totalPages > 1 && (
+          <nav class="pagination" aria-label="分页">
+            <a 
+              href={getPageUrl(currentPage - 1)} 
+              class={`pagination-previous ${currentPage === 1 ? 'is-disabled' : ''}`}
+              aria-label="上一页"
+            >
+              <i class="fas fa-chevron-left"></i>
+              {PAGINATION_CONFIG.prevText}
             </a>
-          </div>
+            
+            <a 
+              href={getPageUrl(currentPage + 1)} 
+              class={`pagination-next ${currentPage === totalPages ? 'is-disabled' : ''}`}
+              aria-label="下一页"
+            >
+              {PAGINATION_CONFIG.nextText}
+              <i class="fas fa-chevron-right"></i>
+            </a>
+            
+            <ul class="pagination-list">
+              {/* 第一页 */}
+              {currentPage > PAGINATION_CONFIG.midSize + 1 && (
+                <>
+                  <li><a href={getPageUrl(1)} class="pagination-link" aria-label="第 1 页">1</a></li>
+                  {currentPage > PAGINATION_CONFIG.midSize + 2 && (
+                    <li><span class="pagination-ellipsis">&hellip;</span></li>
+                  )}
+                </>
+              )}
+              
+              {/* 中间页码 */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => 
+                  page >= currentPage - PAGINATION_CONFIG.midSize &&
+                  page <= currentPage + PAGINATION_CONFIG.midSize
+                )
+                .map(page => (
+                  <li>
+                    <a 
+                      href={getPageUrl(page)} 
+                      class={`pagination-link ${page === currentPage ? 'is-current' : ''}`}
+                      aria-label={`第 ${page} 页`}
+                      aria-current={page === currentPage ? 'page' : undefined}
+                    >
+                      {page}
+                    </a>
+                  </li>
+                ))}
+              
+              {/* 最后一页 */}
+              {currentPage < totalPages - PAGINATION_CONFIG.midSize && (
+                <>
+                  {currentPage < totalPages - PAGINATION_CONFIG.midSize - 1 && (
+                    <li><span class="pagination-ellipsis">&hellip;</span></li>
+                  )}
+                  <li><a href={getPageUrl(totalPages)} class="pagination-link" aria-label={`第 ${totalPages} 页`}>{totalPages}</a></li>
+                </>
+              )}
+            </ul>
+          </nav>
         )}
       </div>
       
       {/* 右侧边栏 */}
-      <div class="column is-3 sidebar-right">
+      <div class="column is-2 sidebar-right">
         <div class="sidebar-content">
           <RecentPosts />
           <Categories />
@@ -60,56 +127,102 @@ const recentPosts = posts.slice(0, 10);
 </BaseLayout>
 
 <style>
-  .container {
-    padding: 2rem 1rem;
+  .container { padding: 2rem 1rem; max-width: 1400px; }
+  .sidebar-content > * { margin-bottom: 2rem; }
+  .posts-container { margin-bottom: 2rem; }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 3rem;
+    flex-wrap: wrap;
   }
   
-  .sidebar-content > * {
-    margin-bottom: 2rem;
+  .pagination-previous,
+  .pagination-next {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s ease;
   }
   
-  .sidebar-content > *:last-child {
-    margin-bottom: 0;
+  .pagination-previous:hover,
+  .pagination-next:hover {
+    border-color: var(--primary);
+    color: var(--primary);
   }
   
-  .posts-container {
-    margin-bottom: 3rem;
+  .pagination-previous.is-disabled,
+  .pagination-next.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }
   
-  .load-more {
-    padding: 2rem 0;
+  .pagination-list {
+    display: flex;
+    gap: 0.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
   
-  .load-more .button {
-    padding: 0.75rem 2rem;
+  .pagination-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .pagination-link:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  
+  .pagination-link.is-current {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+  
+  .pagination-ellipsis {
+    padding: 0 0.5rem;
+    color: var(--text-light);
   }
   
   @media (max-width: 1024px) {
-    .sidebar-left {
-      display: none;
-    }
-    
-    .main-content {
-      width: 70%;
-    }
-    
-    .sidebar-right {
-      width: 30%;
-    }
+    .sidebar-left { display: none; }
+    .main-content { width: 70%; }
+    .sidebar-right { width: 30%; }
   }
   
   @media (max-width: 768px) {
-    .container {
-      padding: 1rem;
+    .container { padding: 1rem; }
+    .main-content, .sidebar-right { width: 100%; }
+    .sidebar-right { display: none; }
+    
+    .pagination {
+      flex-direction: column;
+      gap: 1rem;
     }
     
-    .main-content,
-    .sidebar-right {
-      width: 100%;
-    }
-    
-    .sidebar-right {
-      display: none;
+    .pagination-list {
+      order: -1;
     }
   }
 </style>

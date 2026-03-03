@@ -1,0 +1,247 @@
+---
+import { CURSOR_CONFIG } from '../config';
+
+const { enabled, clickEffect, clickEffectColor, trailEffect, trailColor } = CURSOR_CONFIG;
+---
+
+{enabled && (
+  <>
+    {/* 点击动效容器 */}
+    {clickEffect && <div id="click-effects" class="click-effects-container"></div>}
+    
+    {/* 鼠标轨迹容器 */}
+    {trailEffect && <div id="cursor-trail" class="cursor-trail-container"></div>}
+  </>
+)}
+
+<script is:inline define:vars={{ enabled, clickEffect, clickEffectColor, trailEffect, trailColor }}>
+  (function() {
+    if (!enabled) return;
+    
+    const clickEffectsContainer = document.getElementById('click-effects');
+    const cursorTrailContainer = document.getElementById('cursor-trail');
+    
+    // 获取正确的视口坐标（考虑滚动）
+    function getViewportPos(e) {
+      // 优先使用 clientX/clientY，它们相对于视口
+      // 对于触摸事件，使用 touches[0]
+      if (e.touches && e.touches[0]) {
+        return {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        };
+      }
+      return {
+        x: e.clientX,
+        y: e.clientY
+      };
+    }
+    
+    // 点击动效
+    if (clickEffect) {
+      document.addEventListener('click', function(e) {
+        const pos = getViewportPos(e);
+        createClickEffect(pos.x, pos.y);
+      });
+      
+      // 触摸支持
+      document.addEventListener('touchstart', function(e) {
+        const pos = getViewportPos(e);
+        createClickEffect(pos.x, pos.y);
+      }, { passive: true });
+      
+      function createClickEffect(x, y) {
+        if (!clickEffectsContainer) return;
+        
+        const effect = document.createElement('div');
+        effect.className = 'click-effect';
+        effect.style.left = x + 'px';
+        effect.style.top = y + 'px';
+        effect.style.setProperty('--effect-color', clickEffectColor || 'var(--primary)');
+        
+        clickEffectsContainer.appendChild(effect);
+        
+        // 动画结束后移除
+        setTimeout(() => {
+          effect.remove();
+        }, 600);
+      }
+    }
+    
+    // 鼠标轨迹（仅在桌面端启用）
+    if (trailEffect && !window.matchMedia('(pointer: coarse)').matches) {
+      let lastTrailTime = 0;
+      const trailInterval = 50; // 轨迹点间隔
+      
+      document.addEventListener('mousemove', function(e) {
+        const now = Date.now();
+        if (now - lastTrailTime < trailInterval) return;
+        lastTrailTime = now;
+        
+        const pos = getViewportPos(e);
+        createTrailPoint(pos.x, pos.y);
+      });
+      
+      function createTrailPoint(x, y) {
+        if (!cursorTrailContainer) return;
+        
+        const point = document.createElement('div');
+        point.className = 'cursor-trail-point';
+        point.style.left = x + 'px';
+        point.style.top = y + 'px';
+        point.style.setProperty('--trail-color', trailColor || 'var(--primary)');
+        
+        cursorTrailContainer.appendChild(point);
+        
+        // 动画结束后移除
+        setTimeout(() => {
+          point.remove();
+        }, 500);
+      }
+    }
+    
+    // 双击爱心效果
+    document.addEventListener('dblclick', function(e) {
+      const pos = getViewportPos(e);
+      createHeartEffect(pos.x, pos.y);
+    });
+    
+    function createHeartEffect(x, y) {
+      const heart = document.createElement('div');
+      heart.className = 'click-heart';
+      heart.innerHTML = '❤️';
+      heart.style.left = x + 'px';
+      heart.style.top = y + 'px';
+      
+      document.body.appendChild(heart);
+      
+      setTimeout(() => {
+        heart.remove();
+      }, 1000);
+    }
+  })();
+</script>
+
+<style is:global>
+  .click-effects-container,
+  .cursor-trail-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9997;
+  }
+
+  /* 点击波纹效果 */
+  .click-effect {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--effect-color, var(--primary));
+    transform: translate(-50%, -50%) scale(0);
+    animation: clickRipple 0.6s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes clickRipple {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(4);
+      opacity: 0;
+    }
+  }
+
+  /* 点击波纹环效果 */
+  .click-effect::before,
+  .click-effect::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--effect-color, var(--primary));
+    transform: translate(-50%, -50%);
+    animation: clickRing 0.6s ease-out forwards;
+  }
+
+  .click-effect::after {
+    animation-delay: 0.1s;
+  }
+
+  @keyframes clickRing {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(3);
+      opacity: 0;
+    }
+  }
+
+  /* 鼠标轨迹点 */
+  .cursor-trail-point {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--trail-color, var(--primary));
+    transform: translate(-50%, -50%);
+    animation: trailFade 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes trailFade {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  /* 双击爱心效果 */
+  .click-heart {
+    position: absolute;
+    font-size: 1.5rem;
+    transform: translate(-50%, -50%);
+    animation: heartFloat 1s ease-out forwards;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  @keyframes heartFloat {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+    }
+    20% {
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+    100% {
+      transform: translate(-50%, -150%) scale(1);
+      opacity: 0;
+    }
+  }
+
+  /* 暗色模式适配 */
+  [data-theme="dark"] .click-effect {
+    box-shadow: 0 0 10px var(--effect-color, var(--neon-cyan));
+  }
+
+  [data-theme="dark"] .click-effect::before,
+  [data-theme="dark"] .click-effect::after {
+    border-color: var(--effect-color, var(--neon-cyan));
+    box-shadow: 0 0 5px var(--effect-color, var(--neon-cyan));
+  }
+</style>

@@ -1,28 +1,21 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
-import pagefind from 'astro-pagefind';
 
 // https://astro.build/config
 export default defineConfig({
-  // Cloudflare Pages 站点配置
   site: 'https://astro-icarus.pages.dev',
   base: '/',
-  
-  // 输出模式
   output: 'static',
   
-  // 集成
   integrations: [
     mdx(),
     sitemap(),
-    pagefind(),
   ],
   
-  // Markdown 配置
   markdown: {
     shikiConfig: {
-      // 支持多种主题，根据系统偏好自动切换
+      // 自适应主题：根据系统偏好自动切换
       themes: {
         light: 'github-light',
         dark: 'github-dark',
@@ -31,49 +24,76 @@ export default defineConfig({
     },
   },
   
-  // 图像优化配置
+  // 图片优化配置 - 自动压缩并转WebP
   image: {
-    // Cloudflare 不支持 sharp runtime，使用 compile 模式在构建时优化
     service: {
       entrypoint: 'astro/assets/services/sharp',
       config: {
         limitInputPixels: false,
+        // Sharp 优化选项
+        avif: {
+          quality: 80,
+          effort: 4,
+        },
+        webp: {
+          quality: 80,
+          effort: 6,
+        },
+        jpeg: {
+          quality: 80,
+          progressive: true,
+        },
+        png: {
+          quality: 80,
+          compressionLevel: 9,
+        },
       },
     },
-    // 允许优化的图像域名
     domains: [],
-    // 远程图像模式
-    remotePatterns: [
-      { protocol: 'https' },
-    ],
+    remotePatterns: [{ protocol: 'https' }],
+    // 默认输出格式为 WebP
+    format: 'webp',
   },
   
-  // Vite 配置
   vite: {
     build: {
       rollupOptions: {
         external: [],
+        output: {
+          // 代码分割优化
+          manualChunks: {
+            'vendor': ['fuse.js'],
+          },
+        },
+      },
+      // CSS 优化
+      cssMinify: true,
+      // JS 优化
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+        },
       },
     },
-    ssr: {
-      noExternal: [],
-    },
+    // 资源优化
+    assetsInclude: ['**/*.webp', '**/*.avif'],
   },
   
-  // 构建配置
   build: {
     format: 'directory',
-    // 内联小型资源
     assetsInlineLimit: 4096,
+    // 分块策略
+    chunkSizeWarningLimit: 1000,
   },
   
-  // 开发服务器配置
   server: {
     port: 4321,
     host: true,
   },
   
-  // 预获取配置（性能优化）
+  // 预获取优化
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'viewport',
